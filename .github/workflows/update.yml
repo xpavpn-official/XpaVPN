@@ -28,15 +28,15 @@ jobs:
         urls = [
             "https://raw.githubusercontent.com/igareck/vpn-configs-for-russia/refs/heads/main/Vless-Reality-White-Lists-Rus-Mobile-2.txt",
             "https://raw.githubusercontent.com/igareck/vpn-configs-for-russia/refs/heads/main/Vless-Reality-White-Lists-Rus-Mobile.txt",
-            "https://raw.githubusercontent.com/igareck/vpn-configs-for-russia/refs/heads/main/BLACK_VLESS_RUS.txt"
+            "https://raw.githubusercontent.com/igareck/vpn-configs-for-russia/heads/main/BLACK_VLESS_RUS.txt"
         ]
                 
         headers = """# profile-title: XpaVPN | PREMIUM
-       # profile-update-interval: 1
-       # profile-web-page-url: https://t.me/XpaVPN
-       # support-url: https://t.me/XpaneR
-       # announce: Поддержка: @XpaneR | 🔄 Обновление каждый час
-       # subscription-userinfo: upload=0;download=291372332154880;total=0;expire=2524608000"""
+        # profile-update-interval: 1
+        # profile-web-page-url: https://t.me/XpaVPN
+        # support-url: https://t.me/XpaneR
+        # announce: Поддержка: @XpaneR | 🔄 Обновление каждый час
+        # subscription-userinfo: upload=0;download=291372332154880;total=0;expire=2524608000"""
                 
         unique_configs = set()
         for url in urls:
