@@ -1,40 +1,59 @@
 name: Update VPN Configs
-
 on:
   schedule:
-    - cron: '0 * * * *'
-  workflow_dispatch:
-
+    - cron: '0 */2 * * *'
+  workflow_dispatch: # 
 permissions:
-  contents: write
-
+  contents: write # Разрешение роботу обновлять файлы в репозитории
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
     - name: Проверка репозитория
       uses: actions/checkout@v4
+    - name: Настройка Python
+      uses: actions/setup-python@v5
       with:
-        token: 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
-
-    - name: Сборка конфигураций VPN
+        python-version: '3.x'
+    - name: Запуск парсера конфигов
       run: |
-        # 1. Создаем правильный заголовок подписки
-        echo "# profile-title: XpaVPN | PREMIUM" > index.html
-        echo "# profile-update-interval: 1" >> index.html
-        echo "# profile-web-page-url: https://t.me/XpaVPN" >> index.html
-        echo "# support-url: https://t.me/XpaneR" >> index.html
-        echo "# announce: Поддержка: @XpaneR | 🔄 Обновление каждый час" >> index.html
-        echo "# subscription-userinfo: upload=0;download=291372332154880;total=0;expire=2524608000" >> index.html
-
-        # 2. Скачиваем базы, убираем комментарии/пустые строки и склеиваем в один файл
-        curl -s "https://raw.githubusercontent.com/igareck/vpn-configs-for-russia/refs/heads/main/Vless-Reality-White-Lists-Rus-Mobile-2.txt" | grep -v '^#' | grep -v '^$' >> temp_configs.txt || true
-        curl -s "https://raw.githubusercontent.com/igareck/vpn-configs-for-russia/refs/heads/main/Vless-Reality-White-Lists-Rus-Mobile.txt" | grep -v '^#' | grep -v '^$' >> temp_configs.txt || true
-        curl -s "https://raw.githubusercontent.com/igareck/vpn-configs-for-russia/refs/heads/main/BLACK_VLESS_RUS.txt" | grep -v '^#' | grep -v '^$' >> temp_configs.txt || true
-
-        # 3. Сортируем и убираем дубликаты серверов, затем закидываем в финальный файл
-        sort -u temp_configs.txt >> index.html
-
+        python -c '
+        import urllib.request
+                
+        urls = [
+            "https://raw.githubusercontent.com/igareck/vpn-configs-for-russia/refs/heads/main/Vless-Reality-White-Lists-Rus-Mobile-2.txt",
+            "https://raw.githubusercontent.com/igareck/vpn-configs-for-russia/refs/heads/main/Vless-Reality-White-Lists-Rus-Mobile.txt",
+            "https://raw.githubusercontent.com/igareck/vpn-configs-for-russia/refs/heads/main/BLACK_VLESS_RUS.txt"
+        ]
+                
+        headers = """# profile-title: XpaVPN | PREMIUM
+        # profile-update-interval: 2
+        # profile-web-page-url: https://t.me/XpaVPN
+        # support-url: https://t.me/XpaneR
+        # announce: Поддержка: @XpaneR | 🔄 Обновление каждый час
+        # subscription-userinfo: upload=0;download=291372332154880;total=0;expire=2524608000"""
+                
+        unique_configs = set()
+        for url in urls:
+            try:
+                req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
+                with urllib.request.urlopen(req) as response:
+                    content = response.read().decode("utf-8")
+                    for line in content.splitlines():
+                        cleaned = line.strip()
+                        # Проверяем, что строка не пустая и не является старым комментарием
+                        if cleaned and not cleaned.startswith("#"):
+                            unique_configs.add(cleaned)
+            except Exception as e:
+                print(f"Ошибка при скачивании {url}: {e}")
+                        
+        # Собираем и убираем лишние отступы у заголовков
+        final_content = headers.replace("        ", "") + "\n" + "\n".join(sorted(unique_configs))
+                
+        with open("index.html", "w", encoding="utf-8") as f:
+            f.write(final_content)
+        print("Файл index.html успешно сгенерирован!")
+        '
     - name: Сохранение изменений в GitHub
       run: |
         git config --global user.name "github-actions[bot]"
