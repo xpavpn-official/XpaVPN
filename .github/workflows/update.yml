@@ -32,11 +32,11 @@ jobs:
         ]
         
         headers = """# profile-title: XpaVPN | PREMIUM
-        # profile-update-interval: 4
+        # profile-update-interval: 2
         # profile-web-page-url: https://t.me/XpaVPN
         # support-url: https://t.me/XpaneR
         # announce: Конфиги обновляются автоматически Поддержка - @XpaneR
-        # subscription-userinfo: upload=0;download=102255474245632;total=0;expire=2524608000"""
+        # subscription-userinfo: upload=0;download=23252516012441;total=0;expire=2524608000"""
         
         unique_configs = set()
         for url in urls:
