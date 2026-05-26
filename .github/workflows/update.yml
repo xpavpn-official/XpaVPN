@@ -12,31 +12,28 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: Check out repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Build VPN Configs
+      - name: Build Index
         run: |
-          # 1. Создаем правильный заголовок подписки в текстовый файл sub.txt
-          echo "# profile-title: XpaVPN | PREMIUM" > sub.txt
-          echo "# profile-update-interval: 1" >> sub.txt
-          echo "# profile-web-page-url: https://t.me/XpaVPN" >> sub.txt
-          echo "# support-url: https://t.me/XpaneR" >> sub.txt
-          echo "# announce: Поддержка: @XpaneR | 🔄 Обновление каждый час" >> sub.txt
-          echo "# subscription-userinfo: upload=0;download=291372332154880;total=0;expire=2524608000" >> sub.txt
-
-          # 2. Скачиваем базы и склеиваем в один временный файл
+          echo "# profile-title: XpaVPN | PREMIUM" > index.html
+          echo "# profile-update-interval: 1" >> index.html
+          echo "# profile-web-page-url: https://t.me/XpaVPN" >> index.html
+          echo "# support-url: https://t.me/XpaneR" >> index.html
+          echo "# announce: Поддержка: @XpaneR | 🔄 Обновление каждый час" >> index.html
+          echo "# subscription-userinfo: upload=0;download=291372332154880;total=0;expire=2524608000" >> index.html
+          
           curl -s "https://raw.githubusercontent.com/igareck/vpn-configs-for-russia/refs/heads/main/Vless-Reality-White-Lists-Rus-Mobile-2.txt" | grep -v '^#' | grep -v '^$' >> temp.txt || true
           curl -s "https://raw.githubusercontent.com/igareck/vpn-configs-for-russia/refs/heads/main/Vless-Reality-White-Lists-Rus-Mobile.txt" | grep -v '^#' | grep -v '^$' >> temp.txt || true
           curl -s "https://raw.githubusercontent.com/igareck/vpn-configs-for-russia/refs/heads/main/BLACK_VLESS_RUS.txt" | grep -v '^#' | grep -v '^$' >> temp.txt || true
+          
+          sort -u temp.txt >> index.html
+          rm temp.txt
 
-          # 3. Сортируем, убираем дубли и дописываем в sub.txt
-          sort -u temp.txt >> sub.txt
-
-      - name: Push changes
+      - name: Push
         run: |
-          git config --global user.name "github-actions[bot]"
-          git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          git add sub.txt
-          git commit -m "Автообновление конфигураций VPN" || exit 0
+          git config user.name "github-actions"
+          git config user.email "actions@github.com"
+          git add index.html
+          git commit -m "Update" || exit 0
           git push
