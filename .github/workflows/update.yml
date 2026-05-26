@@ -2,8 +2,8 @@ name: Update VPN Configs
 
 on:
   schedule:
-    - cron: '0 */4 * * *' # Автозапуск каждые 4 часа
-  workflow_dispatch: # Кнопка для ручного запуска в панели GitHub
+    - cron: '0 */2 * * *'
+  workflow_dispatch: # 
 
 permissions:
   contents: write # Разрешение роботу обновлять файлы в репозитории
