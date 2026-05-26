@@ -2,11 +2,11 @@ name: Update VPN Configs
 
 on:
   schedule:
-    - cron: '0 */2 * * *'
-  workflow_dispatch: # 
+    - cron: '0 * * * *' # Теперь сам GitHub тоже будет запускаться каждый час
+  workflow_dispatch:
 
 permissions:
-  contents: write # Разрешение роботу обновлять файлы в репозитории
+  contents: write # Теперь комментарий убран, и робот ОФИЦИАЛЬНО может обновлять файлы!
 
 jobs:
   build:
@@ -24,20 +24,20 @@ jobs:
       run: |
         python -c '
         import urllib.request
-        
+                
         urls = [
             "https://raw.githubusercontent.com/igareck/vpn-configs-for-russia/refs/heads/main/Vless-Reality-White-Lists-Rus-Mobile-2.txt",
             "https://raw.githubusercontent.com/igareck/vpn-configs-for-russia/refs/heads/main/Vless-Reality-White-Lists-Rus-Mobile.txt",
             "https://raw.githubusercontent.com/igareck/vpn-configs-for-russia/refs/heads/main/BLACK_VLESS_RUS.txt"
         ]
-        
+                
         headers = """# profile-title: XpaVPN | PREMIUM
-        # profile-update-interval: 2
-        # profile-web-page-url: https://t.me/XpaVPN
-        # support-url: https://t.me/XpaneR
-        # announce: Поддержка: @XpaneR | 🔄 Обновление каждый час
-        # subscription-userinfo: upload=0;download=291372332154880;total=0;expire=2524608000"""
-        
+# profile-update-interval: 1
+# profile-web-page-url: https://t.me/XpaVPN
+# support-url: https://t.me/XpaneR
+# announce: Поддержка: @XpaneR | 🔄 Обновление каждый час
+# subscription-userinfo: upload=0;download=291372332154880;total=0;expire=2524608000"""
+                
         unique_configs = set()
         for url in urls:
             try:
@@ -46,15 +46,13 @@ jobs:
                     content = response.read().decode("utf-8")
                     for line in content.splitlines():
                         cleaned = line.strip()
-                        # Проверяем, что строка не пустая и не является старым комментарием
                         if cleaned and not cleaned.startswith("#"):
                             unique_configs.add(cleaned)
             except Exception as e:
                 print(f"Ошибка при скачивании {url}: {e}")
+                        
+        final_content = headers + "\n" + "\n".join(sorted(unique_configs))
                 
-        # Собираем и убираем лишние отступы у заголовков
-        final_content = headers.replace("        ", "") + "\n" + "\n".join(sorted(unique_configs))
-        
         with open("index.html", "w", encoding="utf-8") as f:
             f.write(final_content)
         print("Файл index.html успешно сгенерирован!")
