@@ -7,12 +7,12 @@ urls = [
 ]
 
 headers = (
-    "# profile-title: XpaVPN | PREMIUM\n"
+    "# profile-title: XpaVPN | Белые Списки\n"
     "# profile-update-interval: 1\n"
     "# profile-web-page-url: https://t.me/XpaVPN\n"
     "# support-url: https://t.me/XpaneR\n"
-    "# announce: Поддержка: @XpaneR | 🔄 Обновление каждый час\n"
-    "# subscription-userinfo: upload=0;download=291372332154880;total=0;expire=2524608000"
+    "# announce: Поддержка: @XpaneR | 🔄 Обновление каждые 2 часа\n"
+    "# subscription-userinfo: upload=0;download=1099511627776000;total=0;expire=2524608000"
 )
 
 unique_configs = set()
