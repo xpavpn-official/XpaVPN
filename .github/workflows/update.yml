@@ -16,12 +16,12 @@ jobs:
 
       - name: Build Index
         run: |
-          echo "# profile-title: XpaVPN | Белые Списки" > index.html
+          echo "# profile-title: XpaVPN | PREMIUM" > index.html
+          echo "# announce: ТГ XpaVPN. Бесплатные сервера могут не работать!" >> index.html
           echo "# profile-update-interval: 1" >> index.html
           echo "# profile-web-page-url: https://t.me/XpaVPN" >> index.html
           echo "# support-url: https://t.me/XpaneR" >> index.html
-          echo "# announce: Поддержка: @XpaneR | 🔄 Обновление каждые 2 часа" >> index.html
-          echo "# subscription-userinfo: upload=0;download=1099511627776000;total=0;expire=2524608000" >> index.html
+          echo "# subscription-userinfo: upload=0;download=275049845719040;total=0;expire=2524608000" >> index.html
           
           curl -s "https://raw.githubusercontent.com/igareck/vpn-configs-for-russia/refs/heads/main/Vless-Reality-White-Lists-Rus-Mobile-2.txt" | grep -v '^#' | grep -v '^$' >> temp.txt || true
           curl -s "https://raw.githubusercontent.com/igareck/vpn-configs-for-russia/refs/heads/main/Vless-Reality-White-Lists-Rus-Mobile.txt" | grep -v '^#' | grep -v '^$' >> temp.txt || true
