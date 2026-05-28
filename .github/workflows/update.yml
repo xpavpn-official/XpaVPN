@@ -17,8 +17,8 @@ jobs:
       - name: Build Index
         run: |
           # 1. Записываем заголовки в чистом виде
-          echo "# profile-title: XpaVPN | PREMIUM" > index.html
-          echo "# announce: ТГ XpaVPN. Бесплатные сервера могут не работать!" >> index.html
+          echo "# profile-title: XpaVPN | ELITE" > index.html
+          echo "# announce: Поддержка: @XpaneR | Проект закрытого типа." >> index.html
           echo "# profile-update-interval: 1" >> index.html
           echo "# profile-web-page-url: https://t.me/XpaVPN" >> index.html
           echo "# support-url: https://t.me/XpaneR" >> index.html
@@ -29,7 +29,6 @@ jobs:
           curl -s "https://raw.githubusercontent.com/igareck/vpn-configs-for-russia/refs/heads/main/Vless-Reality-White-Lists-Rus-Mobile.txt" | grep -v '^#' | grep -v '^$' >> temp.txt || true
           curl -s "https://raw.githubusercontent.com/igareck/vpn-configs-for-russia/refs/heads/main/BLACK_VLESS_RUS.txt" | grep -v '^#' | grep -v '^$' >> temp.txt || true
           
-          # 3. Сортируем, кодируем в base64 и добавляем в файл
           sort -u temp.txt | base64 -w 0 >> index.html
           rm temp.txt
 
