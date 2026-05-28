@@ -28,9 +28,6 @@ jobs:
           curl -s "https://raw.githubusercontent.com/igareck/vpn-configs-for-russia/refs/heads/main/Vless-Reality-White-Lists-Rus-Mobile-2.txt" | grep -v '^#' | grep -v '^$' >> temp.txt || true
           curl -s "https://raw.githubusercontent.com/igareck/vpn-configs-for-russia/refs/heads/main/Vless-Reality-White-Lists-Rus-Mobile.txt" | grep -v '^#' | grep -v '^$' >> temp.txt || true
           curl -s "https://raw.githubusercontent.com/igareck/vpn-configs-for-russia/refs/heads/main/BLACK_VLESS_RUS.txt" | grep -v '^#' | grep -v '^$' >> temp.txt || true
-          
-          sort -u temp.txt | base64 -w 0 >> index.html
-          rm temp.txt
 
       - name: Push
         run: |
