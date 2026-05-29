@@ -28,9 +28,15 @@ jobs:
           curl -s "https://raw.githubusercontent.com/solovyov-jenya2004/all_subs/refs/heads/main/final_sorted" >> all_raw.txt || true
           
           grep -E 'vless://|trojan://|hysteria2://' all_raw.txt | sed '/^$/d' | sort -u | shuf | head -n 200 | \
-          sed -E 's/(vless|trojan|hysteria2):\/\/[^#]+#/\1:\/\/| /' | \
-          sed -E 's/\| (.*)/| [БС] \1 | РосPanel/' | \
-          sed -E 's/Россия/Россия/g' >> index.html
+          sed -E 's/(.*)#.*/\1/' | \
+          awk '{
+            country = "Global";
+            if ($0 ~ /RU|Россия|Russia/) country = "Россия";
+            else if ($0 ~ /US|USA|United States/) country = "USA";
+            else if ($0 ~ /DE|Germany/) country = "Germany";
+            else if ($0 ~ /NL|Netherlands/) country = "Netherlands";
+            print $0 "#[БС] " country " | РосPanel"
+          }' >> index.html
           
           rm all_raw.txt
 
