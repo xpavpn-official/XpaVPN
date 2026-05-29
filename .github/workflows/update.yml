@@ -28,8 +28,9 @@ jobs:
           curl -s "https://raw.githubusercontent.com/solovyov-jenya2004/all_subs/refs/heads/main/final_sorted" >> all_raw.txt || true
           
           grep -E 'vless://|trojan://|hysteria2://' all_raw.txt | sed '/^$/d' | sort -u | shuf | head -n 200 | \
-          sed -E 's/(\||\[|\{) ?(@?[a-zA-Z0-9_]+|БС-VL|BL|TG|XRAY|SINGBOX|WB|WS|TCP|XHTTP|РосPanel|РосТуннель)[^|]*//g' | \
-          sed -E 's/ +/ /g' >> index.html
+          sed -E 's/\|? ?(TG:|тг:|tg:|@)[^|#]*//g' | \
+          sed -E 's/\|? ?(\[.*\]|БС-VL|РосТуннель|PocPanel|XRAY|SINGBOX|WB|WS|TCP|XHTTP)[^|#]*//g' | \
+          sed -E 's/ +/ /g' | sed -E 's/ \||\| $//g' >> index.html
           
           rm all_raw.txt
 
