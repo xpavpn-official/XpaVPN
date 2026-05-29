@@ -18,19 +18,23 @@ jobs:
         run: |
           FILENAME="vless-a9f8b2c4e1d0.txt"
           
-          echo "# profile-title: XpaVPN | ELITE" > $FILENAME
-          echo "# announce: Поддержка: @XpaneR | Проект закрытого типа." >> $FILENAME
-          echo "# profile-update-interval: 1" >> $FILENAME
-          echo "# profile-web-page-url: https://t.me/XpaVPN" >> $FILENAME
-          echo "# support-url: https://t.me/XpaneR" >> $FILENAME
-          echo "# subscription-userinfo: upload=0;download=275049845719040;total=0;expire=2524608000" >> $FILENAME
+          # 1. Собираем список
+          echo "# profile-title: XpaVPN | ELITE" > temp.txt
+          echo "# announce: Поддержка: @XpaneR | Проект закрытого типа." >> temp.txt
+          echo "# profile-update-interval: 1" >> temp.txt
+          echo "# profile-web-page-url: https://t.me/XpaVPN" >> temp.txt
+          echo "# support-url: https://t.me/XpaneR" >> temp.txt
+          echo "# subscription-userinfo: upload=0;download=275049845719040;total=0;expire=2524608000" >> temp.txt
           
           curl -s "https://raw.githubusercontent.com/igareck/vpn-configs-for-russia/refs/heads/main/Vless-Reality-White-Lists-Rus-Mobile-2.txt" | grep -v '^#' | grep -v '^$' >> all.txt || true
           curl -s "https://raw.githubusercontent.com/igareck/vpn-configs-for-russia/refs/heads/main/Vless-Reality-White-Lists-Rus-Mobile.txt" | grep -v '^#' | grep -v '^$' >> all.txt || true
           curl -s "https://raw.githubusercontent.com/igareck/vpn-configs-for-russia/refs/heads/main/BLACK_VLESS_RUS.txt" | grep -v '^#' | grep -v '^$' >> all.txt || true
           
-          sort -u all.txt | shuf | head -n 100 >> $FILENAME
-          rm all.txt
+          sort -u all.txt | shuf | head -n 100 >> temp.txt
+          
+          # 2. Сжимаем в GZIP (защита от чтения)
+          gzip -c temp.txt > $FILENAME
+          rm temp.txt all.txt
 
       - name: Push
         run: |
