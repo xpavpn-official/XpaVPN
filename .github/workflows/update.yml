@@ -16,41 +16,43 @@ jobs:
 
       - name: Build Index
         run: |
-          # Скачиваем с новым именем файла, чтобы гарантированно не подтянулся кэш
-          curl -s "https://raw.githubusercontent.com/igareck/vpn-configs-for-russia/main/WHITE-CIDR-RU-all.txt" > r1.txt
-          curl -s "https://raw.githubusercontent.com/igareck/vpn-configs-for-russia/main/Vless-Reality-White-Lists-Rus-Mobile.txt" >> r1.txt
-          curl -s "https://raw.githubusercontent.com/igareck/vpn-configs-for-russia/main/TOR-BRIDGES/TOR_BRIDGES_OBFS4.txt" >> r1.txt
-          curl -s "https://raw.githubusercontent.com/igareck/vpn-configs-for-russia/main/TOR-BRIDGES/TOR_BRIDGES_TOP100.txt" >> r1.txt
-          curl -s "https://raw.githubusercontent.com/igareck/vpn-configs-for-russia/main/WHITE-CIDR-RU-checked.txt" >> r1.txt
-          curl -s "https://raw.githubusercontent.com/Maskkost93/kizyak-vpn-4.0/refs/heads/main/kizyakbeta7.txt" >> r1.txt
-          curl -s "https://raw.githubusercontent.com/Maskkost93/kizyak-vpn-4.0/refs/heads/main/kizyaktestru.txt" >> r1.txt
+          # 1. Скачиваем все ссылки в один файл
+          curl -s "https://raw.githubusercontent.com/igareck/vpn-configs-for-russia/main/WHITE-CIDR-RU-all.txt" > raw.txt
+          curl -s "https://raw.githubusercontent.com/igareck/vpn-configs-for-russia/main/Vless-Reality-White-Lists-Rus-Mobile.txt" >> raw.txt
+          curl -s "https://raw.githubusercontent.com/igareck/vpn-configs-for-russia/main/TOR-BRIDGES/TOR_BRIDGES_OBFS4.txt" >> raw.txt
+          curl -s "https://raw.githubusercontent.com/igareck/vpn-configs-for-russia/main/TOR-BRIDGES/TOR_BRIDGES_TOP100.txt" >> raw.txt
+          curl -s "https://raw.githubusercontent.com/igareck/vpn-configs-for-russia/main/WHITE-CIDR-RU-checked.txt" >> raw.txt
+          curl -s "https://raw.githubusercontent.com/Maskkost93/kizyak-vpn-4.0/refs/heads/main/kizyakbeta7.txt" >> raw.txt
+          curl -s "https://raw.githubusercontent.com/Maskkost93/kizyak-vpn-4.0/refs/heads/main/kizyaktestru.txt" >> raw.txt
           
-          # Очистка: берем только vless/trojan, убираем весь мусор в именах, ставим свое
-          grep -E 'vless://|trojan://|hysteria://|hysteria2://' r1.txt | sort -u | shuf | head -n 250 | \
-          sed -E 's/(.*)#.*/\1# [БС] Сервер | РосPanel/' > filtered.txt
+          # 2. Оставляем только vless/trojan/hysteria и перемешиваем (без переименования имен)
+          grep -E 'vless://|trojan://|hysteria://|hysteria2://' raw.txt | sort -u | shuf | head -n 300 > filtered.txt
           
-          # Формируем данные
+          # 3. Считаем количество для announce
           COUNT=$(wc -l < filtered.txt)
           DATE=$(date +'%d.%m %H:%M')
+          
+          # Формируем текст
           MESSAGE=$(printf "✈️ Xpa VPN | Подписка\n✈️ Предоставлено: %s ✈️ ✑ Количество серверов: %s ♞\n✑ ♞ #OPENSOURCE ♞" "$DATE" "$COUNT")
           ENCODED=$(echo -n "$MESSAGE" | base64 | tr -d '\n')
           
-          # Записываем все заново
-          echo "profile-title: XpaVPN | ELITE" > index.html
-          echo "announce: base64:$ENCODED" >> index.html
-          echo "profile-update-interval: 1" >> index.html
-          echo "profile-web-page-url: https://t.me/XpaVPN" >> index.html
-          echo "support-url: https://t.me/XpaneR" >> index.html
-          echo "subscription-userinfo: upload=0;download=275049845719040;total=0;expire=2524608000" >> index.html
-          cat filtered.txt >> index.html
+          # 4. Перезаписываем index.html полностью
+          {
+            echo "profile-title: XpaVPN | ELITE"
+            echo "announce: base64:$ENCODED"
+            echo "profile-update-interval: 1"
+            echo "profile-web-page-url: https://t.me/XpaVPN"
+            echo "support-url: https://t.me/XpaneR"
+            echo "subscription-userinfo: upload=0;download=275049845719040;total=0;expire=2524608000"
+            cat filtered.txt
+          } > index.html
           
-          rm r1.txt filtered.txt
+          rm raw.txt filtered.txt
 
       - name: Push
         run: |
           git config user.name "github-actions"
           git config user.email "actions@github.com"
           git add index.html
-          # Добавляем случайный хеш в коммит, чтобы GitHub точно увидел изменение
-          git commit -m "Update $(date +'%s')" || exit 0
+          git commit -m "Update $(date +'%Y-%m-%d %H:%M')" || exit 0
           git push
