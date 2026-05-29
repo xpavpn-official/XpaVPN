@@ -1,10 +1,8 @@
 name: Update VPN Configs
-
 on:
   schedule:
     - cron: '0 * * * *'
   workflow_dispatch:
-
 permissions:
   contents: write
 
@@ -12,45 +10,31 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Build and Push
+      - uses: actions/checkout@v4
+      - name: Build Index
         run: |
-          # 1. Скачивание всех списков
-          curl -s "https://raw.githubusercontent.com/igareck/vpn-configs-for-russia/main/WHITE-CIDR-RU-all.txt" > raw.txt
+          # 1. Скачиваем конфиги
+          curl -s "https://raw.githubusercontent.com/igareck/vpn-configs-for-russia/main/Vless-Reality-White-Lists-Rus-Mobile-2.txt" > raw.txt
           curl -s "https://raw.githubusercontent.com/igareck/vpn-configs-for-russia/main/Vless-Reality-White-Lists-Rus-Mobile.txt" >> raw.txt
-          curl -s "https://raw.githubusercontent.com/igareck/vpn-configs-for-russia/main/TOR-BRIDGES/TOR_BRIDGES_OBFS4.txt" >> raw.txt
-          curl -s "https://raw.githubusercontent.com/igareck/vpn-configs-for-russia/main/TOR-BRIDGES/TOR_BRIDGES_TOP100.txt" >> raw.txt
-          curl -s "https://raw.githubusercontent.com/igareck/vpn-configs-for-russia/main/WHITE-CIDR-RU-checked.txt" >> raw.txt
-          curl -s "https://raw.githubusercontent.com/Maskkost93/kizyak-vpn-4.0/refs/heads/main/kizyakbeta7.txt" >> raw.txt
-          curl -s "https://raw.githubusercontent.com/Maskkost93/kizyak-vpn-4.0/refs/heads/main/kizyaktestru.txt" >> raw.txt
+          curl -s "https://raw.githubusercontent.com/igareck/vpn-configs-for-russia/main/BLACK_VLESS_RUS.txt" >> raw.txt
           
-          # 2. Фильтрация и создание списка
-          grep -E 'vless://|trojan://|hysteria://|hysteria2://' raw.txt | sort -u | shuf | head -n 300 > filtered.txt
+          # 2. Фильтруем (оставляем только vless/trojan)
+          grep -E 'vless://|trojan://' raw.txt | sort -u > filtered.txt
           
-          # 3. Подсчет серверов
-          COUNT=$(wc -l < filtered.txt)
-          DATE=$(date +'%d.%m.%Y %H:%M')
-          
-          # 4. Запись в index.html (Без Base64)
+          # 3. Собираем файл с правильной шапкой
           {
-            echo "profile-title: XpaVPN | ELITE"
-            echo "announce: ✈️ XpaVPN | ELITE | Обновлено: $DATE | Серверов: $COUNT"
-            echo "profile-update-interval: 1"
-            echo "profile-web-page-url: https://t.me/XpaVPN"
-            echo "support-url: https://t.me/XpaneR"
-            # total=0 и download=0 активируют символ бесконечности ∞
-            echo "subscription-userinfo: upload=0;download=0;total=0;expire=253370764800"
+            echo "# profile-title: XpaVPN | ELITE"
+            echo "# profile-update-interval: 1"
+            echo "# profile-web-page-url: https://t.me/XpaVPN"
+            echo "# support-url: https://t.me/XpaneR"
+            echo "# announce: ✈️ XpaVPN | ELITE | Работает стабильно"
+            echo "# subscription-userinfo: upload=0;download=0;total=0;expire=253370764800"
             cat filtered.txt
           } > index.html
           
-          # 5. Пуш изменений
+          # 4. Сохраняем изменения
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add index.html
-          git commit -m "Update subscription $(date +'%Y-%m-%d')" || true
+          git commit -m "Update subscription" || true
           git push
-          
-          # Очистка
-          rm raw.txt filtered.txt
