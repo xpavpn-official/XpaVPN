@@ -16,23 +16,24 @@ jobs:
 
       - name: Build Index
         run: |
-          # Собираем данные
-          echo "# profile-title: XpaVPN | ELITE" > temp.txt
-          echo "# announce: Поддержка: @XpaneR | Проект закрытого типа." >> temp.txt
-          echo "# profile-update-interval: 1" >> temp.txt
-          echo "# profile-web-page-url: https://t.me/XpaVPN" >> temp.txt
-          echo "# support-url: https://t.me/XpaneR" >> temp.txt
-          echo "# subscription-userinfo: upload=0;download=275049845719040;total=0;expire=2524608000" >> temp.txt
+          # 1. Создаем файл и сразу пишем туда заголовки
+          echo "# profile-title: XpaVPN | ELITE" > index.html
+          echo "# announce: Поддержка: @XpaneR | Проект закрытого типа." >> index.html
+          echo "# profile-update-interval: 1" >> index.html
+          echo "# profile-web-page-url: https://t.me/XpaVPN" >> index.html
+          echo "# support-url: https://t.me/XpaneR" >> index.html
+          echo "# subscription-userinfo: upload=0;download=275049845719040;total=0;expire=2524608000" >> index.html
           
-          curl -s "https://raw.githubusercontent.com/igareck/vpn-configs-for-russia/refs/heads/main/Vless-Reality-White-Lists-Rus-Mobile-2.txt" | grep -v '^#' | grep -v '^$' >> all.txt || true
-          curl -s "https://raw.githubusercontent.com/igareck/vpn-configs-for-russia/refs/heads/main/Vless-Reality-White-Lists-Rus-Mobile.txt" | grep -v '^#' | grep -v '^$' >> all.txt || true
-          curl -s "https://raw.githubusercontent.com/igareck/vpn-configs-for-russia/refs/heads/main/BLACK_VLESS_RUS.txt" | grep -v '^#' | grep -v '^$' >> all.txt || true
+          # 2. Скачиваем конфиги в отдельный временный файл
+          curl -s "https://raw.githubusercontent.com/igareck/vpn-configs-for-russia/refs/heads/main/Vless-Reality-White-Lists-Rus-Mobile-2.txt" > all.txt
+          curl -s "https://raw.githubusercontent.com/igareck/vpn-configs-for-russia/refs/heads/main/Vless-Reality-White-Lists-Rus-Mobile.txt" >> all.txt
+          curl -s "https://raw.githubusercontent.com/igareck/vpn-configs-for-russia/refs/heads/main/BLACK_VLESS_RUS.txt" >> all.txt
           
-          sort -u all.txt | shuf | head -n 100 >> temp.txt
+          # 3. Фильтруем (убираем комменты и пустые строки), берем 100 уникальных и добавляем в индекс
+          grep -v '^#' all.txt | grep -v '^$' | sort -u | shuf | head -n 100 >> index.html
           
-          # Кодируем в Base64 и пишем в файл
-          base64 -w 0 temp.txt > index.html
-          rm temp.txt all.txt
+          # 4. Удаляем мусор
+          rm all.txt
 
       - name: Push
         run: |
