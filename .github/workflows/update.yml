@@ -42,7 +42,7 @@ jobs:
             echo "profile-update-interval: 1"
             echo "profile-web-page-url: https://t.me/XpaVPN"
             echo "support-url: https://t.me/XpaneR"
-            echo "subscription-userinfo: upload=0;download=845426186403840;total=845426186403840;expire=253370764800"
+            echo "subscription-userinfo: upload=0;download=217551286731;total=0;expire=253370764800"
             cat filtered.txt
           } > index.html
           
