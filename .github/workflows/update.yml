@@ -16,28 +16,40 @@ jobs:
 
       - name: Build Index
         run: |
-          # Заголовки (остаются в начале)
+          # 1. Скачиваем конфиги во временный файл
+          curl -s "https://raw.githubusercontent.com/igareck/vpn-configs-for-russia/main/WHITE-CIDR-RU-all.txt" > raw.txt
+          curl -s "https://raw.githubusercontent.com/igareck/vpn-configs-for-russia/main/Vless-Reality-White-Lists-Rus-Mobile.txt" >> raw.txt
+          curl -s "https://raw.githubusercontent.com/igareck/vpn-configs-for-russia/main/TOR-BRIDGES/TOR_BRIDGES_OBFS4.txt" >> raw.txt
+          curl -s "https://raw.githubusercontent.com/igareck/vpn-configs-for-russia/main/TOR-BRIDGES/TOR_BRIDGES_TOP100.txt" >> raw.txt
+          curl -s "https://raw.githubusercontent.com/igareck/vpn-configs-for-russia/main/WHITE-CIDR-RU-checked.txt" >> raw.txt
+          curl -s "https://raw.githubusercontent.com/Maskkost93/kizyak-vpn-4.0/refs/heads/main/kizyakbeta7.txt" >> raw.txt
+          curl -s "https://raw.githubusercontent.com/Maskkost93/kizyak-vpn-4.0/refs/heads/main/kizyaktestru.txt" >> raw.txt
+          
+          # 2. Фильтруем рабочие протоколы, переименовываем и сохраняем
+          grep -E 'vless://|trojan://|hysteria://|hysteria2://' raw.txt | sort -u | shuf | head -n 200 | \
+          sed -E 's/(.*)#.*/\1# [БС] Сервер | РосPanel/' > filtered.txt
+          
+          # 3. Подсчет и формирование announce
+          COUNT=$(wc -l < filtered.txt)
+          DATE=$(date +'%d.%m %H:%M')
+          MESSAGE=$(printf "✈️ Xpa VPN | Подписка\n✈️ Предоставлено: %s ✈️ ✑ Количество серверов: %s ♞\n✑ ♞ #OPENSOURCE ♞" "$DATE" "$COUNT")
+          ENCODED=$(echo -n "$MESSAGE" | base64 | tr -d '\n')
+          
+          # 4. Запись в index.html
           echo "profile-title: XpaVPN | ELITE" > index.html
-          echo "announce: Обновлено: $(date +'%d.%m %H:%M') | Clean" >> index.html
+          echo "announce: base64:$ENCODED" >> index.html
           echo "profile-update-interval: 1" >> index.html
           echo "profile-web-page-url: https://t.me/XpaVPN" >> index.html
           echo "support-url: https://t.me/XpaneR" >> index.html
           echo "subscription-userinfo: upload=0;download=275049845719040;total=0;expire=2524608000" >> index.html
           
-          # Скачиваем конфиги в файл all.txt
-          curl -s "https://raw.githubusercontent.com/igareck/vpn-configs-for-russia/refs/heads/main/Vless-Reality-White-Lists-Rus-Mobile-2.txt" > all.txt
-          curl -s "https://raw.githubusercontent.com/mahdibland/V2RayAggregator/refs/heads/master/sub/splitted/all" >> all.txt || true
-          
-          # Дописываем отобранные конфиги в index.html
-          grep -E 'vless://|trojan://|hysteria2://' all.txt | sort -u | shuf | head -n 200 >> index.html
-          
-          # Удаляем временный файл
-          rm all.txt
+          cat filtered.txt >> index.html
+          rm raw.txt filtered.txt
 
       - name: Push
         run: |
           git config user.name "github-actions"
           git config user.email "actions@github.com"
           git add index.html
-          git commit -m "Update" || exit 0
+          git commit -m "Full Update with Clean Names" || exit 0
           git push
