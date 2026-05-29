@@ -27,7 +27,10 @@ jobs:
           curl -s "https://raw.githubusercontent.com/mahdibland/V2RayAggregator/refs/heads/master/sub/splitted/all" >> all_raw.txt || true
           curl -s "https://raw.githubusercontent.com/solovyov-jenya2004/all_subs/refs/heads/main/final_sorted" >> all_raw.txt || true
           
-          grep -E 'vless://|trojan://|hysteria2://' all_raw.txt | sed '/^$/d' | sort -u | shuf | head -n 200 >> index.html
+          grep -E 'vless://|trojan://|hysteria2://' all_raw.txt | sed '/^$/d' | sort -u | shuf | head -n 200 | \
+          sed -E 's/(vless|trojan|hysteria2):\/\/[^#]+#/\1:\/\/| /' | \
+          sed -E 's/\| (.*)/| [БС] \1 | РосPanel/' | \
+          sed -E 's/Россия/Россия/g' >> index.html
           
           rm all_raw.txt
 
