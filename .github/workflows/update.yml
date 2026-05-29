@@ -16,7 +16,7 @@ jobs:
 
       - name: Build Index
         run: |
-          # 1. Скачиваем все ссылки в один файл
+          # 1. Скачиваем конфиги во временный файл
           curl -s "https://raw.githubusercontent.com/igareck/vpn-configs-for-russia/main/WHITE-CIDR-RU-all.txt" > raw.txt
           curl -s "https://raw.githubusercontent.com/igareck/vpn-configs-for-russia/main/Vless-Reality-White-Lists-Rus-Mobile.txt" >> raw.txt
           curl -s "https://raw.githubusercontent.com/igareck/vpn-configs-for-russia/main/TOR-BRIDGES/TOR_BRIDGES_OBFS4.txt" >> raw.txt
@@ -25,25 +25,27 @@ jobs:
           curl -s "https://raw.githubusercontent.com/Maskkost93/kizyak-vpn-4.0/refs/heads/main/kizyakbeta7.txt" >> raw.txt
           curl -s "https://raw.githubusercontent.com/Maskkost93/kizyak-vpn-4.0/refs/heads/main/kizyaktestru.txt" >> raw.txt
           
-          # 2. Оставляем только vless/trojan/hysteria и перемешиваем (без переименования имен)
+          # 2. Фильтруем рабочие протоколы и перемешиваем (без изменения имен!)
           grep -E 'vless://|trojan://|hysteria://|hysteria2://' raw.txt | sort -u | shuf | head -n 300 > filtered.txt
           
-          # 3. Считаем количество для announce
+          # 3. Подсчет данных для шапки
           COUNT=$(wc -l < filtered.txt)
-          DATE=$(date +'%d.%m %H:%M')
+          DATE=$(date +'%d.%m.%Y %H:%M')
           
-          # Формируем текст
-          MESSAGE=$(printf "✈️ Xpa VPN | Подписка\n✈️ Предоставлено: %s ✈️ ✑ Количество серверов: %s ♞\n✑ ♞ #OPENSOURCE ♞" "$DATE" "$COUNT")
+          # Формируем текст сообщения
+          MESSAGE=$(printf "✈️ XpaVPN | ELITE\nОбновлено: %s | Серверов: %s\nПоддержка: @XpaneR" "$DATE" "$COUNT")
           ENCODED=$(echo -n "$MESSAGE" | base64 | tr -d '\n')
           
-          # 4. Перезаписываем index.html полностью
+          # 4. Запись в index.html
+          # download=845426186403840
+          # expire=253370764800
           {
             echo "profile-title: XpaVPN | ELITE"
             echo "announce: base64:$ENCODED"
             echo "profile-update-interval: 1"
             echo "profile-web-page-url: https://t.me/XpaVPN"
             echo "support-url: https://t.me/XpaneR"
-            echo "subscription-userinfo: upload=0;download=275049845719040;total=0;expire=2524608000"
+            echo "subscription-userinfo: upload=0;download=845426186403840;total=845426186403840;expire=253370764800"
             cat filtered.txt
           } > index.html
           
