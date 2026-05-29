@@ -29,7 +29,7 @@ jobs:
           
           grep -E 'vless://|trojan://|hysteria2://' all_raw.txt | sed '/^$/d' | sort -u | shuf | head -n 200 | \
           sed -E 's/\|? ?(TG:|тг:|tg:|@)[^|#]*//g' | \
-          sed -E 's/\|? ?(\[.*\]|БС-VL|РосТуннель|PocPanel|XRAY|SINGBOX|WB|WS|TCP|XHTTP)[^|#]*//g' | \
+          sed -E 's/\|? ?(\[.*\]|БС-VL|РосТуннель|PocPanel|XRAY|SINGBOX|WB|WS|TCP|XHTTP|\[BL\]|\[BL_\])[^|#]*//g' | \
           sed -E 's/ +/ /g' | sed -E 's/ \||\| $//g' >> index.html
           
           rm all_raw.txt
