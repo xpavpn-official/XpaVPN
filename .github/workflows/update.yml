@@ -1,16 +1,23 @@
 name: Update VPN Configs
+
 on:
   schedule:
     - cron: '0 * * * *'
   workflow_dispatch:
+
+permissions:
+  contents: write
+
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
+
       - name: Build and Push
         run: |
-          # Скачивание исходников
+          # 1. Скачивание исходников
           curl -s "https://raw.githubusercontent.com/igareck/vpn-configs-for-russia/main/WHITE-CIDR-RU-all.txt" > raw.txt
           curl -s "https://raw.githubusercontent.com/igareck/vpn-configs-for-russia/main/Vless-Reality-White-Lists-Rus-Mobile.txt" >> raw.txt
           curl -s "https://raw.githubusercontent.com/igareck/vpn-configs-for-russia/main/TOR-BRIDGES/TOR_BRIDGES_OBFS4.txt" >> raw.txt
@@ -19,18 +26,16 @@ jobs:
           curl -s "https://raw.githubusercontent.com/Maskkost93/kizyak-vpn-4.0/refs/heads/main/kizyakbeta7.txt" >> raw.txt
           curl -s "https://raw.githubusercontent.com/Maskkost93/kizyak-vpn-4.0/refs/heads/main/kizyaktestru.txt" >> raw.txt
           
-          # Фильтрация и перемешивание
+          # 2. Фильтрация
           grep -E 'vless://|trojan://|hysteria://|hysteria2://' raw.txt | sort -u | shuf | head -n 300 > filtered.txt
           
-          # Формирование данных
+          # 3. Формирование заголовка
           COUNT=$(wc -l < filtered.txt)
           DATE=$(date +'%d.%m.%Y %H:%M')
           MESSAGE=$(printf "✈️ XpaVPN | ELITE\nОбновлено: %s | Серверов: %s\nПоддержка: @XpaneR" "$DATE" "$COUNT")
           ENCODED=$(echo -n "$MESSAGE" | base64 | tr -d '\n')
           
-          # Запись с правильными параметрами
-          # download = 845426186403840 байт (769 ТБ)
-          # expire = 253370764800 (Далекое будущее)
+          # 4. Запись в index.html
           {
             echo "profile-title: XpaVPN | ELITE"
             echo "announce: base64:$ENCODED"
@@ -41,9 +46,10 @@ jobs:
             cat filtered.txt
           } > index.html
           
-          # Пуш в репозиторий
-          git config user.name "github-actions"
-          git config user.email "actions@github.com"
+          # 5. Пуш (используем токен для авторизации)
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
           git add index.html
-          git commit -m "Update subscription $(date +'%Y-%m-%d')" || exit 0
+          # Используем || true, чтобы скрипт не падал, если файлы не изменились
+          git commit -m "Update subscription $(date +'%Y-%m-%d')" || true
           git push
