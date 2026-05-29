@@ -17,22 +17,19 @@ jobs:
       - name: Build Index
         run: |
           echo "# profile-title: XpaVPN | ELITE" > index.html
-          echo "# announce: Обновлено: $(date +'%d.%m %H:%M') | Vless, Trojan, Hysteria" >> index.html
+          echo "# announce: Обновлено: $(date +'%d.%m %H:%M') | Stable Pro" >> index.html
           echo "# profile-update-interval: 1" >> index.html
           echo "# profile-web-page-url: https://t.me/XpaVPN" >> index.html
           echo "# support-url: https://t.me/XpaneR" >> index.html
           echo "# subscription-userinfo: upload=0;download=275049845719040;total=0;expire=2524608000" >> index.html
           
-          curl -s "https://raw.githubusercontent.com/igareck/vpn-configs-for-russia/refs/heads/main/Vless-Reality-White-Lists-Rus-Mobile-2.txt" > all.txt
-          curl -s "https://raw.githubusercontent.com/barry-far/V2ray-Configs/refs/heads/main/Splitted-By-Protocol/vless.txt" >> all.txt || true
-          curl -s "https://raw.githubusercontent.com/barry-far/V2ray-Configs/refs/heads/main/Splitted-By-Protocol/trojan.txt" >> all.txt || true
-          curl -s "https://raw.githubusercontent.com/barry-far/V2ray-Configs/refs/heads/main/Splitted-By-Protocol/hysteria2.txt" >> all.txt || true
-          curl -s "https://raw.githubusercontent.com/mahdibland/V2RayAggregator/refs/heads/master/sub/splitted/vless" >> all.txt || true
-          curl -s "https://raw.githubusercontent.com/igareck/vpn-configs-for-russia/refs/heads/main/BLACK_VLESS_RUS.txt" >> all.txt || true
+          curl -s "https://raw.githubusercontent.com/igareck/vpn-configs-for-russia/refs/heads/main/Vless-Reality-White-Lists-Rus-Mobile-2.txt" > all_raw.txt
+          curl -s "https://raw.githubusercontent.com/mahdibland/V2RayAggregator/refs/heads/master/sub/splitted/all" >> all_raw.txt || true
+          curl -s "https://raw.githubusercontent.com/solovyov-jenya2004/all_subs/refs/heads/main/final_sorted" >> all_raw.txt || true
           
-          grep -E 'vless://|trojan://|hysteria2://' all.txt | sort -u | shuf | head -n 150 >> index.html
+          grep -E 'vless://|trojan://|hysteria2://' all_raw.txt | sed '/^$/d' | sort -u | shuf | head -n 200 >> index.html
           
-          rm all.txt
+          rm all_raw.txt
 
       - name: Push
         run: |
