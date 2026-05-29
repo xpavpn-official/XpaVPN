@@ -16,23 +16,22 @@ jobs:
 
       - name: Build Index
         run: |
-          # 1. Создаем файл и сразу пишем туда заголовки
           echo "# profile-title: XpaVPN | ELITE" > index.html
-          echo "# announce: Поддержка: @XpaneR | Проект закрытого типа." >> index.html
+          echo "# announce: Обновлено: $(date +'%d.%m %H:%M') | Vless, Trojan, Hysteria" >> index.html
           echo "# profile-update-interval: 1" >> index.html
           echo "# profile-web-page-url: https://t.me/XpaVPN" >> index.html
           echo "# support-url: https://t.me/XpaneR" >> index.html
           echo "# subscription-userinfo: upload=0;download=275049845719040;total=0;expire=2524608000" >> index.html
           
-          # 2. Скачиваем конфиги в отдельный временный файл
           curl -s "https://raw.githubusercontent.com/igareck/vpn-configs-for-russia/refs/heads/main/Vless-Reality-White-Lists-Rus-Mobile-2.txt" > all.txt
-          curl -s "https://raw.githubusercontent.com/igareck/vpn-configs-for-russia/refs/heads/main/Vless-Reality-White-Lists-Rus-Mobile.txt" >> all.txt
-          curl -s "https://raw.githubusercontent.com/igareck/vpn-configs-for-russia/refs/heads/main/BLACK_VLESS_RUS.txt" >> all.txt
+          curl -s "https://raw.githubusercontent.com/barry-far/V2ray-Configs/refs/heads/main/Splitted-By-Protocol/vless.txt" >> all.txt || true
+          curl -s "https://raw.githubusercontent.com/barry-far/V2ray-Configs/refs/heads/main/Splitted-By-Protocol/trojan.txt" >> all.txt || true
+          curl -s "https://raw.githubusercontent.com/barry-far/V2ray-Configs/refs/heads/main/Splitted-By-Protocol/hysteria2.txt" >> all.txt || true
+          curl -s "https://raw.githubusercontent.com/mahdibland/V2RayAggregator/refs/heads/master/sub/splitted/vless" >> all.txt || true
+          curl -s "https://raw.githubusercontent.com/igareck/vpn-configs-for-russia/refs/heads/main/BLACK_VLESS_RUS.txt" >> all.txt || true
           
-          # 3. Фильтруем (убираем комменты и пустые строки), берем 100 уникальных и добавляем в индекс
-          grep -v '^#' all.txt | grep -v '^$' | sort -u | shuf | head -n 100 >> index.html
+          grep -E 'vless://|trojan://|hysteria2://' all.txt | sort -u | shuf | head -n 150 >> index.html
           
-          # 4. Удаляем мусор
           rm all.txt
 
       - name: Push
@@ -40,5 +39,5 @@ jobs:
           git config user.name "github-actions"
           git config user.email "actions@github.com"
           git add index.html
-          git commit -m "Update" || exit 0
+          git commit -m "Auto Update" || exit 0
           git push
