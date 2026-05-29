@@ -16,27 +16,20 @@ jobs:
 
       - name: Build Index
         run: |
-          echo "# profile-title: XpaVPN | ELITE" > index.html
-          echo "# announce: Обновлено: $(date +'%d.%m %H:%M') | Stable Pro" >> index.html
-          echo "# profile-update-interval: 1" >> index.html
-          echo "# profile-web-page-url: https://t.me/XpaVPN" >> index.html
-          echo "# support-url: https://t.me/XpaneR" >> index.html
-          echo "# subscription-userinfo: upload=0;download=275049845719040;total=0;expire=2524608000" >> index.html
+          echo "profile-title: XpaVPN | ELITE" > index.html
+          echo "announce: Обновлено: $(date +'%d.%m %H:%M') | Stable Pro" >> index.html
+          echo "profile-update-interval: 1" >> index.html
+          echo "profile-web-page-url: https://t.me/XpaVPN" >> index.html
+          echo "support-url: https://t.me/XpaneR" >> index.html
+          echo "subscription-userinfo: upload=0;download=275049845719040;total=0;expire=2524608000" >> index.html
           
           curl -s "https://raw.githubusercontent.com/igareck/vpn-configs-for-russia/refs/heads/main/Vless-Reality-White-Lists-Rus-Mobile-2.txt" > all_raw.txt
           curl -s "https://raw.githubusercontent.com/mahdibland/V2RayAggregator/refs/heads/master/sub/splitted/all" >> all_raw.txt || true
           curl -s "https://raw.githubusercontent.com/solovyov-jenya2004/all_subs/refs/heads/main/final_sorted" >> all_raw.txt || true
           
           grep -E 'vless://|trojan://|hysteria2://' all_raw.txt | sed '/^$/d' | sort -u | shuf | head -n 200 | \
-          sed -E 's/(.*)#.*/\1/' | \
-          awk '{
-            country = "Global";
-            if ($0 ~ /RU|Россия|Russia/) country = "Россия";
-            else if ($0 ~ /US|USA|United States/) country = "USA";
-            else if ($0 ~ /DE|Germany/) country = "Germany";
-            else if ($0 ~ /NL|Netherlands/) country = "Netherlands";
-            print $0 "#[БС] " country " | РосPanel"
-          }' >> index.html
+          sed -E 's/(\||\[|\{) ?(@?[a-zA-Z0-9_]+|БС-VL|BL|TG|XRAY|SINGBOX|WB|WS|TCP|XHTTP|РосPanel|РосТуннель)[^|]*//g' | \
+          sed -E 's/ +/ /g' >> index.html
           
           rm all_raw.txt
 
@@ -45,5 +38,5 @@ jobs:
           git config user.name "github-actions"
           git config user.email "actions@github.com"
           git add index.html
-          git commit -m "Auto Update" || exit 0
+          git commit -m "Clean Update" || exit 0
           git push
