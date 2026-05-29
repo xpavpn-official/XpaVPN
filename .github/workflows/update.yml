@@ -1,22 +1,18 @@
 name: Update VPN Configs
-
 on:
   schedule:
     - cron: '0 * * * *'
   workflow_dispatch:
-
-permissions:
-  contents: write
-
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
-      - name: Build Index
+      - name: Build and Push to Gist
+        env:
+          GIST_TOKEN: ${{ secrets.GIST_TOKEN }}
         run: |
-          # 1. Скачиваем конфиги во временный файл
+          # 1. Скачивание
           curl -s "https://raw.githubusercontent.com/igareck/vpn-configs-for-russia/main/WHITE-CIDR-RU-all.txt" > raw.txt
           curl -s "https://raw.githubusercontent.com/igareck/vpn-configs-for-russia/main/Vless-Reality-White-Lists-Rus-Mobile.txt" >> raw.txt
           curl -s "https://raw.githubusercontent.com/igareck/vpn-configs-for-russia/main/TOR-BRIDGES/TOR_BRIDGES_OBFS4.txt" >> raw.txt
@@ -24,21 +20,15 @@ jobs:
           curl -s "https://raw.githubusercontent.com/igareck/vpn-configs-for-russia/main/WHITE-CIDR-RU-checked.txt" >> raw.txt
           curl -s "https://raw.githubusercontent.com/Maskkost93/kizyak-vpn-4.0/refs/heads/main/kizyakbeta7.txt" >> raw.txt
           curl -s "https://raw.githubusercontent.com/Maskkost93/kizyak-vpn-4.0/refs/heads/main/kizyaktestru.txt" >> raw.txt
-          
-          # 2. Фильтруем рабочие протоколы и перемешиваем (без изменения имен!)
           grep -E 'vless://|trojan://|hysteria://|hysteria2://' raw.txt | sort -u | shuf | head -n 300 > filtered.txt
           
-          # 3. Подсчет данных для шапки
+          # 2. Формирование контента
           COUNT=$(wc -l < filtered.txt)
           DATE=$(date +'%d.%m.%Y %H:%M')
-          
-          # Формируем текст сообщения
           MESSAGE=$(printf "✈️ XpaVPN | ELITE\nОбновлено: %s | Серверов: %s\nПоддержка: @XpaneR" "$DATE" "$COUNT")
           ENCODED=$(echo -n "$MESSAGE" | base64 | tr -d '\n')
           
-          # 4. Запись в index.html
-          # download=845426186403840
-          # expire=253370764800
+          # 3. Создание файла для Gist
           {
             echo "profile-title: XpaVPN | ELITE"
             echo "announce: base64:$ENCODED"
@@ -49,12 +39,7 @@ jobs:
             cat filtered.txt
           } > index.html
           
-          rm raw.txt filtered.txt
-
-      - name: Push
-        run: |
-          git config user.name "github-actions"
-          git config user.email "actions@github.com"
-          git add index.html
-          git commit -m "Update $(date +'%Y-%m-%d %H:%M')" || exit 0
-          git push
+          # 4. Отправка в Gist (обновление)
+          curl -X PATCH -H "Authorization: token $GIST_TOKEN" \
+            -d "{\"files\": {\"index.html\": {\"content\": \"$(cat index.html | python3 -c 'import json,sys; print(json.dumps(sys.stdin.read()))' | sed 's/^.//;s/.$//')\"}}}" \
+            https://api.github.com/gists/ТВОЙ_GIST_ID
