@@ -16,9 +16,7 @@ jobs:
 
       - name: Build Index
         run: |
-          FILENAME="vless-a9f8b2c4e1d0.txt"
-          
-          # 1. Собираем список
+          # Собираем данные
           echo "# profile-title: XpaVPN | ELITE" > temp.txt
           echo "# announce: Поддержка: @XpaneR | Проект закрытого типа." >> temp.txt
           echo "# profile-update-interval: 1" >> temp.txt
@@ -32,14 +30,14 @@ jobs:
           
           sort -u all.txt | shuf | head -n 100 >> temp.txt
           
-          # 2. Сжимаем в GZIP (защита от чтения)
-          gzip -c temp.txt > $FILENAME
+          # Кодируем в Base64 и пишем в файл
+          base64 -w 0 temp.txt > index.html
           rm temp.txt all.txt
 
       - name: Push
         run: |
           git config user.name "github-actions"
           git config user.email "actions@github.com"
-          git add .
+          git add index.html
           git commit -m "Update" || exit 0
           git push
