@@ -35,13 +35,13 @@ jobs:
             echo "# profile-title: XpaVPN | ELITE"
             echo "# profile-update-interval: 1"
             echo "# subscription-userinfo: upload=0;download=51539607552;total=0;expire=253370764800"
-            base64 -w 0 final_list.txt
+            cat final_list.txt
           } > index.html
           
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add index.html
-          git commit -m "Fix structure $(date +'%Y-%m-%d %H:%M')" || true
+          git commit -m "Update subscription $(date +'%Y-%m-%d %H:%M')" || true
           git push
           
           rm raw.txt filtered.txt final_list.txt
