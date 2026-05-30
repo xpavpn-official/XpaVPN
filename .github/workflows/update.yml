@@ -28,13 +28,14 @@ jobs:
             curl -s "$url" >> raw.txt
           done
           
-          grep -E 'vless://|trojan://' raw.txt | sort -u > filtered.txt
+          # Оставляем только vless/trojan, убираем дубликаты и берем только 120 штук
+          grep -E 'vless://|trojan://' raw.txt | sort -u | head -n 120 > filtered.txt
           
           {
             echo "# profile-title: XpaVPN | ELITE"
             echo "# profile-update-interval: 1"
             echo "# subscription-userinfo: upload=0;download=51539607552;total=0;expire=253370764800"
-            sed -E '/(🚀|🔥|🥭)/!s/$/ 🚀 🥭 🔥/' filtered.txt | head -n 150 | base64 -w 0
+            sed -E '/(🚀|🔥|🥭)/!s/$/ 🚀 🥭 🔥/' filtered.txt | base64 -w 0
           } > index.html
           
           git config user.name "github-actions[bot]"
