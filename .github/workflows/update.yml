@@ -33,7 +33,10 @@ jobs:
           
           {
             echo "# profile-title: XpaVPN | ELITE"
+            echo "# announce: Поддержка: @XpaneR | Проект закрытого типа."
             echo "# profile-update-interval: 1"
+            echo "# profile-web-page-url: https://t.me/XpaVPN"
+            echo "# support-url: https://t.me/XpaneR"
             echo "# subscription-userinfo: upload=0;download=51539607552;total=0;expire=253370764800"
             cat final_list.txt
           } > index.html
