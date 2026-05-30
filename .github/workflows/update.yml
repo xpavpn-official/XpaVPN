@@ -1,8 +1,10 @@
 name: Update VPN Configs
+
 on:
   schedule:
     - cron: '0 * * * *'
   workflow_dispatch:
+
 permissions:
   contents: write
 
@@ -11,30 +13,39 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Build Index
+
+      - name: Build and Push
         run: |
-          # 1. Скачиваем конфиги
-          curl -s "https://raw.githubusercontent.com/igareck/vpn-configs-for-russia/main/Vless-Reality-White-Lists-Rus-Mobile-2.txt" > raw.txt
-          curl -s "https://raw.githubusercontent.com/igareck/vpn-configs-for-russia/main/Vless-Reality-White-Lists-Rus-Mobile.txt" >> raw.txt
-          curl -s "https://raw.githubusercontent.com/igareck/vpn-configs-for-russia/main/BLACK_VLESS_RUS.txt" >> raw.txt
+          URLS=(
+            "https://raw.githubusercontent.com/igareck/vpn-configs-for-russia/main/Vless-Reality-White-Lists-Rus-Mobile.txt"
+            "https://raw.githubusercontent.com/igareck/vpn-configs-for-russia/main/BLACK_VLESS_RUS.txt"
+            "https://raw.githubusercontent.com/Maskkost93/kizyak-vpn-4.0/refs/heads/main/kizyakbeta7.txt"
+            "https://raw.githubusercontent.com/Maskkost93/kizyak-vpn-4.0/refs/heads/main/kizyaktestru.txt"
+          )
           
-          # 2. Фильтруем (оставляем только vless/trojan)
-          grep -E 'vless://|trojan://' raw.txt | sort -u > filtered.txt
+          > raw.txt
+          for url in "${URLS[@]}"; do
+            curl -s "$url" >> raw.txt
+          done
           
-          # 3. Собираем файл с правильной шапкой
+          grep -E 'vless://|trojan://' raw.txt | \
+          sed -E 's/\[BL\]//g; s/\[CIDR\]//g; s/ +/ /g' | \
+          sort -u > filtered.txt
+          
           {
             echo "# profile-title: XpaVPN | ELITE"
             echo "# profile-update-interval: 1"
             echo "# profile-web-page-url: https://t.me/XpaVPN"
             echo "# support-url: https://t.me/XpaneR"
             echo "# announce: ✈️ XpaVPN | ELITE | Работает стабильно"
-            echo "# subscription-userinfo: upload=0;download=0;total=0;expire=253370764800"
+            echo "# subscription-userinfo: upload=0;download=51539607552;total=0;expire=253370764800"
             cat filtered.txt
           } > index.html
           
-          # 4. Сохраняем изменения
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add index.html
-          git commit -m "Update subscription" || true
+          git commit -m "Update subscription $(date +'%Y-%m-%d %H:%M')" || true
           git push
+          
+          rm raw.txt filtered.txt
