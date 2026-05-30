@@ -18,7 +18,7 @@ jobs:
         run: |
           URLS=(
             "https://raw.githubusercontent.com/igareck/vpn-configs-for-russia/main/Vless-Reality-White-Lists-Rus-Mobile.txt"
-            "https://raw.githubusercontent.com/BLACK_VLESS_RUS.txt"
+            "https://raw.githubusercontent.com/igareck/vpn-configs-for-russia/main/BLACK_VLESS_RUS.txt"
             "https://raw.githubusercontent.com/Maskkost93/kizyak-vpn-4.0/refs/heads/main/kizyakbeta7.txt"
             "https://raw.githubusercontent.com/Maskkost93/kizyak-vpn-4.0/refs/heads/main/kizyaktestru.txt"
           )
@@ -28,24 +28,21 @@ jobs:
             curl -s "$url" >> raw.txt
           done
           
-          # Фильтрация и ограничение списка
           grep -E 'vless://|trojan://' raw.txt | sort -u | head -n 120 > filtered.txt
           
-          # Добавление эмодзи
           sed -E '/(🚀|🔥|🥭)/!s/$/ 🚀 🥭 🔥/' filtered.txt > final_list.txt
           
-          # Создание файла заголовков
-          echo "profile-title: XpaVPN | ELITE" > header.txt
-          echo "profile-update-interval: 1" >> header.txt
-          echo "subscription-userinfo: upload=0;download=51539607552;total=0;expire=253370764800" >> header.txt
-          
-          # Объединение и полное шифрование ВСЕГО файла
-          cat header.txt final_list.txt | base64 -w 0 > index.html
+          {
+            echo "# profile-title: XpaVPN | ELITE"
+            echo "# profile-update-interval: 1"
+            echo "# subscription-userinfo: upload=0;download=51539607552;total=0;expire=253370764800"
+            base64 -w 0 final_list.txt
+          } > index.html
           
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add index.html
-          git commit -m "Full Base64 update $(date +'%Y-%m-%d %H:%M')" || true
+          git commit -m "Fix subscription structure $(date +'%Y-%m-%d %H:%M')" || true
           git push
           
-          rm raw.txt filtered.txt final_list.txt header.txt
+          rm raw.txt filtered.txt final_list.txt
