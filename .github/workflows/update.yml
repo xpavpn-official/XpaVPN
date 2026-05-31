@@ -21,7 +21,7 @@ jobs:
         run: |
           URLS=(
             "https://raw.githubusercontent.com/igareck/vpn-configs-for-russia/main/Vless-Reality-White-Lists-Rus-Mobile.txt"
-            "https://raw.githubusercontent.com/username/repository/main/filename.txt"
+            "https://raw.githubusercontent.com/igareck/vpn-configs-for-russia/refs/heads/main/WHITE-CIDR-RU-checked.txt"
           )
           
           > raw.txt
