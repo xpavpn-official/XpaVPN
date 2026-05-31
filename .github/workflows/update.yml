@@ -12,8 +12,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
 
@@ -21,20 +20,19 @@ jobs:
         run: |
           URLS=(
             "https://raw.githubusercontent.com/igareck/vpn-configs-for-russia/main/Vless-Reality-White-Lists-Rus-Mobile.txt"
-            "https://raw.githubusercontent.com/igareck/vpn-configs-for-russia/refs/heads/main/WHITE-CIDR-RU-checked.txt"
+            "https://raw.githubusercontent.com/BLACK_VLESS_RUS.txt"
+            "https://raw.githubusercontent.com/Maskkost93/kizyak-vpn-4.0/refs/heads/main/kizyakbeta7.txt"
+            "https://raw.githubusercontent.com/Maskkost93/kizyak-vpn-4.0/refs/heads/main/kizyaktestru.txt"
           )
           
           > raw.txt
           for url in "${URLS[@]}"; do
-            echo "Fetching $url..."
-            curl -sSf "$url" >> raw.txt || echo "Failed to fetch $url"
+            curl -s "$url" >> raw.txt
           done
           
-          # Фильтрация и создание списка
           grep -E 'vless://|trojan://' raw.txt | sort -u | head -n 120 > filtered.txt
           sed -E '/(🚀|🔥|🥭)/!s/$/ 🚀 🥭 🔥/' filtered.txt > final_list.txt
           
-          # Формирование index.html
           {
             echo "# profile-title: XpaVPN | ELITE"
             echo "# announce: Поддержка: @XpaneR | Проект закрытого типа."
@@ -45,17 +43,10 @@ jobs:
             cat final_list.txt
           } > index.html
           
-          # Настройка и отправка изменений
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          
-          # Проверка на изменения перед коммитом
-          if [[ -n $(git status -s) ]]; then
-            git add index.html
-            git commit -m "Update subscription $(date +'%Y-%m-%d %H:%M')"
-            git push origin main
-          else
-            echo "No changes detected, skipping commit."
-          fi
+          git add index.html
+          git commit -m "Update subscription $(date +'%Y-%m-%d %H:%M')" || true
+          git push origin main
           
           rm raw.txt filtered.txt final_list.txt
