@@ -19,8 +19,6 @@ jobs:
           URLS=(
             "https://raw.githubusercontent.com/igareck/vpn-configs-for-russia/main/Vless-Reality-White-Lists-Rus-Mobile.txt"
             "https://raw.githubusercontent.com/BLACK_VLESS_RUS.txt"
-            "https://raw.githubusercontent.com/Maskkost93/kizyak-vpn-4.0/refs/heads/main/kizyakbeta7.txt"
-            "https://raw.githubusercontent.com/Maskkost93/kizyak-vpn-4.0/refs/heads/main/kizyaktestru.txt"
           )
           
           > raw.txt
