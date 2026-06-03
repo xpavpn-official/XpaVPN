@@ -1,265 +1,94 @@
-<!DOCTYPE html>
-<html lang="ru">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Центр управления подписками ЭраVPN | New</title>
-    <!-- Tailwind CSS для стилизации интерфейса -->
-    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
-    <style>
-        body {
-            background-color: #0b0f19;
-            color: #fff;
-            font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-        }
-        /* Анимация плавного появления */
-        .fade-in {
-            animation: fadeIn 0.3s ease-in-out forwards;
-        }
-        @keyframes fadeIn {
-            from { opacity: 0; transform: scale(0.95); }
-            to { opacity: 1; transform: scale(1); }
-        }
-    </style>
-</head>
-<body class="min-h-screen flex flex-col justify-between">
-
-    <!-- ======================================================= -->
-    <!-- 1. ОКНО АВТОРИЗАЦИИ (Блокирует экран до ввода пароля)  -->
-    <!-- ======================================================= -->
-    <div id="auth-container" class="flex flex-col items-center justify-center flex-grow p-4">
-        <div class="bg-[#111827] border border-gray-800 p-8 rounded-xl shadow-2xl w-full max-w-md text-center fade-in">
-            <div class="w-16 h-16 bg-emerald-500/10 text-emerald-400 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl font-bold border border-emerald-500/20">
-                🔒
-            </div>
-            <h2 class="text-2xl font-bold text-emerald-400">XpaVPN | ELITE</h2>
-            <p class="text-gray-400 text-sm mt-1">Вход в панель управления подписками</p>
-            
-            <div class="mt-6 text-left">
-                <label class="text-xs font-semibold text-gray-400 uppercase tracking-wider block mb-2">Пароль Администратора</label>
-                <input type="password" id="password-input" 
-                       class="w-full p-3 bg-[#1f2937] border border-gray-700 rounded-lg text-white focus:border-emerald-400 focus:ring-1 focus:ring-emerald-400 outline-none text-center tracking-widest text-lg" 
-                       placeholder="••••••••••••">
-            </div>
-            
-            <div id="error-msg" class="text-red-400 text-sm mt-3 font-medium hidden">
-                ❌ Неверный пароль администратора!
-            </div>
-            
-            <button onclick="checkPassword()" class="w-full p-3 mt-5 bg-emerald-500 hover:bg-emerald-600 text-[#0b0f19] font-bold rounded-lg cursor-pointer transition-all shadow-lg shadow-emerald-500/10">
-                Войти в систему
-            </button>
-        </div>
-    </div>
-
-    <!-- ======================================================= -->
-    <!-- 2. ОСНОВНАЯ ПАНЕЛЬ УПРАВЛЕНИЯ (Изначально скрыта)       -->
-    <!-- ======================================================= -->
-    <div id="main-panel" class="hidden p-6 max-w-[1600px] mx-auto w-full fade-in">
-        
-        <!-- Заголовок панели -->
-        <header class="mb-6 flex justify-between items-center border-b border-gray-800 pb-4">
-            <div>
-                <h1 class="text-2xl font-bold text-emerald-400">Центр управления подписками ЭраVPN | New</h1>
-                <p class="text-xs text-gray-400 mt-1">Поддержка: @XpaneR | Проект закрытого типа.</p>
-            </div>
-            <button onclick="logout()" class="px-4 py-2 bg-red-600/20 hover:bg-red-600 text-red-400 hover:text-white border border-red-600/30 text-xs font-semibold rounded-lg transition-all cursor-pointer">
-                Выйти из панели
-            </button>
-        </header>
-        
-        <!-- Блок статистики верхний -->
-        <section class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-            <div class="bg-[#111827] border-l-4 border-blue-500 p-6 rounded-r-xl shadow-md">
-                <p class="text-gray-400 text-sm font-medium uppercase tracking-wider text-center">Всего в базе данных</p>
-                <p class="text-3xl font-extrabold text-blue-400 text-center mt-2" id="stat-total">326</p>
-            </div>
-            <div class="bg-[#111827] border-l-4 border-emerald-500 p-6 rounded-r-xl shadow-md">
-                <p class="text-gray-400 text-sm font-medium uppercase tracking-wider text-center">Прошли глубокий чек (Живые)</p>
-                <p class="text-3xl font-extrabold text-emerald-400 text-center mt-2" id="stat-alive">225</p>
-            </div>
-            <div class="bg-[#111827] border-l-4 border-red-500 p-6 rounded-r-xl shadow-md">
-                <p class="text-gray-400 text-sm font-medium uppercase tracking-wider text-center">Заблокировано/Мертвые</p>
-                <p class="text-3xl font-extrabold text-red-500 text-center mt-2" id="stat-dead">101</p>
-            </div>
-        </section>
-
-        <!-- Менеджер Single-Sub подписок -->
-        <section class="bg-[#111827] border border-gray-800 rounded-xl p-6 shadow-xl mb-8">
-            <h3 class="text-lg font-bold text-emerald-400 mb-4 flex items-center gap-2">
-                <span>⚡</span> Менеджер Single-Sub подписок (Выдача клиентам)
-            </h3>
-            
-            <!-- Форма создания подписки -->
-            <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-3 mb-4">
-                <input type="text" placeholder="Имя устройства/пользователя" class="bg-[#1f2937] border border-gray-700 rounded-lg p-2.5 text-sm focus:border-emerald-400 outline-none">
-                <input type="text" placeholder="Токен (пусто для автогенерации)" class="bg-[#1f2937] border border-gray-700 rounded-lg p-2.5 text-sm focus:border-emerald-400 outline-none">
-                <input type="text" placeholder="Лимит трафика (ГБ) [по умолчанию 1024]" class="bg-[#1f2937] border border-gray-700 rounded-lg p-2.5 text-sm focus:border-emerald-400 outline-none">
-                
-                <select class="bg-[#1f2937] border border-gray-700 rounded-lg p-2.5 text-sm focus:border-emerald-400 outline-none text-gray-300">
-                    <option>Бесконечный срок</option>
-                    <option>30 дней</option>
-                    <option>90 дней</option>
-                    <option>365 дней</option>
-                </select>
-                
-                <select class="bg-[#1f2937] border border-gray-700 rounded-lg p-2.5 text-sm focus:border-emerald-400 outline-none text-gray-300">
-                    <option>Все протоколы</option>
-                    <option>VLESS</option>
-                    <option>Trojan</option>
-                    <option>Shadowsocks</option>
-                </select>
-                
-                <select class="bg-[#1f2937] border border-gray-700 rounded-lg p-2.5 text-sm focus:border-emerald-400 outline-none text-gray-300">
-                    <option>Выдавать всё</option>
-                    <option>Только Elite-сервера</option>
-                </select>
-            </div>
-            
-            <div class="flex flex-col md:flex-row gap-3">
-                <input type="text" placeholder="Комментарий / Инфо (например: Наш бот в ТГ: @EraVpnRobot\nСброс трафика каждые 30 дней)" class="flex-grow bg-[#1f2937] border border-gray-700 rounded-lg p-2.5 text-sm focus:border-emerald-400 outline-none">
-                <button class="bg-emerald-400 hover:bg-emerald-500 text-black font-bold text-sm px-6 py-2.5 rounded-lg transition-all cursor-pointer whitespace-nowrap">
-                    Создать подписку
-                </button>
-            </div>
-        </section>
-
-        <!-- Таблица пользователей/подписок -->
-        <section class="bg-[#111827] border border-gray-800 rounded-xl overflow-hidden shadow-xl">
-            <div class="overflow-x-auto">
-                <table class="w-full text-left border-collapse">
-                    <thead>
-                        <tr class="bg-[#1f2937]/50 text-emerald-400 text-xs font-bold uppercase tracking-wider border-b border-gray-800">
-                            <th class="p-4">Имя устройства</th>
-                            <th class="p-4">Токен</th>
-                            <th class="p-4">Использовано ГБ</th>
-                            <th class="p-4">Срок действия</th>
-                            <th class="p-4">Комментарий (INFO)</th>
-                            <th class="p-4">Статус</th>
-                            <th class="p-4">Ссылка подписки</th>
-                            <th class="p-4 text-center">Действия</th>
-                        </tr>
-                    </thead>
-                    <tbody class="text-sm divide-y divide-gray-800/60 font-medium">
-                        <!-- Строка 1: admin -->
-                        <tr class="hover:bg-[#1f2937]/30 transition-colors">
-                            <td class="p-4 font-bold text-white">admin</td>
-                            <td class="p-4 text-gray-400 font-mono text-xs">admin</td>
-                            <td class="p-4 text-amber-400">0.4 / <span class="text-xs text-gray-500">999999999999999... ГБ</span></td>
-                            <td class="p-4 text-emerald-400">Бесконечно</td>
-                            <td class="p-4 text-gray-400 text-xs">Наш ТГК @XpaVPN | Подписка навсегда</td>
-                            <td class="p-4"><span class="px-2 py-0.5 bg-emerald-500/10 text-emerald-400 rounded-md text-xs font-bold">Активна</span></td>
-                            <td class="p-4">
-                                <div class="flex items-center gap-1.5">
-                                    <input type="text" readonly value="http://127.0.0.1:9011/sub?token=admin" class="bg-[#0b0f19] border border-gray-800 rounded p-1 text-xs text-emerald-500/80 outline-none w-44 font-mono">
-                                    <button onclick="navigator.clipboard.writeText('http://127.0.0.1:9011/sub?token=admin')" class="px-2 py-1 bg-blue-500 hover:bg-blue-600 text-white text-xs font-bold rounded cursor-pointer transition-colors">Копировать</button>
-                                </div>
-                            </td>
-                            <td class="p-4">
-                                <div class="flex gap-1 justify-center">
-                                    <button class="px-2 py-1 bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500 hover:text-black text-xs font-bold rounded transition-all cursor-pointer">Изменить</button>
-                                    <button class="px-2 py-1 bg-amber-500 text-black hover:bg-amber-600 text-xs font-bold rounded transition-all cursor-pointer">Отключить</button>
-                                    <button class="px-2 py-1 bg-red-600 hover:bg-red-700 text-white text-xs font-bold rounded transition-all cursor-pointer">Удалить</button>
-                                </div>
-                            </td>
-                        </tr>
-                        <!-- Строка 2: Zakharov Nikita -->
-                        <tr class="hover:bg-[#1f2937]/30 transition-colors">
-                            <td class="p-4 font-bold text-white">Zakharov Nikita</td>
-                            <td class="p-4 text-gray-400 font-mono text-xs">era_58e4dd34</td>
-                            <td class="p-4 text-amber-400">0.03 / 1024 ГБ</td>
-                            <td class="p-4 text-teal-400">03.07.2026 00:41</td>
-                            <td class="p-4 text-gray-600">—</td>
-                            <td class="p-4"><span class="px-2 py-0.5 bg-emerald-500/10 text-emerald-400 rounded-md text-xs font-bold">Активна</span></td>
-                            <td class="p-4">
-                                <div class="flex items-center gap-1.5">
-                                    <input type="text" readonly value="http://127.0.0.1:9011/sub?token=era_58e4dd34" class="bg-[#0b0f19] border border-gray-800 rounded p-1 text-xs text-emerald-500/80 outline-none w-44 font-mono">
-                                    <button onclick="navigator.clipboard.writeText('http://127.0.0.1:9011/sub?token=era_58e4dd34')" class="px-2 py-1 bg-blue-500 hover:bg-blue-600 text-white text-xs font-bold rounded cursor-pointer transition-colors">Копировать</button>
-                                </div>
-                            </td>
-                            <td class="p-4">
-                                <div class="flex gap-1 justify-center">
-                                    <button class="px-2 py-1 bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500 hover:text-black text-xs font-bold rounded transition-all cursor-pointer">Изменить</button>
-                                    <button class="px-2 py-1 bg-amber-500 text-black hover:bg-amber-600 text-xs font-bold rounded transition-all cursor-pointer">Отключить</button>
-                                    <button class="px-2 py-1 bg-red-600 hover:bg-red-700 text-white text-xs font-bold rounded transition-all cursor-pointer">Удалить</button>
-                                </div>
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-            
-            <!-- Пагинация таблицы -->
-            <div class="bg-[#1f2937]/30 p-4 border-t border-gray-800 flex items-center justify-between text-xs text-gray-400">
-                <div class="flex items-center gap-2">
-                    <span class="px-2.5 py-1 bg-emerald-400 text-black font-bold rounded">1</span>
-                    <span>(Всего пользователей: 2)</span>
-                </div>
-            </div>
-        </section>
-
-    </div>
-
-    <!-- Футер страницы -->
-    <footer class="p-4 text-center text-xs text-gray-600 border-t border-gray-900 mt-8">
-        XpaVPN Admin Control Panel Panel &copy; 2026
-    </footer>
-
-    <!-- ======================================================= -->
-    <!-- 3. КРИПТОГРАФИЧЕСКИЙ СКРИПТ АВТОРИЗАЦИИ                -->
-    <!-- ======================================================= -->
-    <script>
-        // SHA-256 хеш от пароля "Zaharvoin27@"
-        const targetHash = "d35678bb1946bebc1637c7ff433b5c46b5a3712b7f320b991ea7fc3041b3e8e1";
-
-        // Хеширование строки через встроенный Web Crypto API
-        async function calculateSHA256(str) {
-            const buffer = new TextEncoder().encode(str);
-            const hashBuffer = await crypto.subtle.digest('SHA-256', buffer);
-            const hashArray = Array.from(new Uint8Array(hashBuffer));
-            return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-        }
-
-        // Авто-логин, если сессия уже активна в этой вкладке
-        window.addEventListener('DOMContentLoaded', () => {
-            if (sessionStorage.getItem('xpa_auth') === 'true') {
-                unlockDashboard();
-            }
-        });
-
-        // Основная функция проверки
-        async function checkPassword() {
-            const inputField = document.getElementById('password-input');
-            const errorElement = document.getElementById('error-msg');
-            
-            const hashedInput = await calculateSHA256(inputField.value);
-
-            if (hashedInput === targetHash) {
-                sessionStorage.setItem('xpa_auth', 'true');
-                unlockDashboard();
-            } else {
-                errorElement.classList.remove('hidden');
-                inputField.value = '';
-                inputField.focus();
-            }
-        }
-
-        function unlockDashboard() {
-            document.getElementById('auth-container').classList.add('hidden');
-            document.getElementById('main-panel').classList.remove('hidden');
-        }
-
-        function logout() {
-            sessionStorage.removeItem('xpa_auth');
-            window.location.reload();
-        }
-
-        // Логин по нажатию кнопки Enter
-        document.getElementById('password-input').addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') {
-                checkPassword();
-            }
-        });
-    </script>
-</body>
-</html>
+# profile-title: XpaVPN | ELITE
+# announce: Поддержка: @XpaneR | Проект закрытого типа.
+# profile-update-interval: 1
+# profile-web-page-url: https://t.me/XpaVPN
+# support-url: https://t.me/XpaneR
+# subscription-userinfo: upload=0;download=51539607552;total=0;expire=253370764800
+trojan://6b7f37af-a853-4f01-a031-5fa4eca4f5bf@141.193.213.10:443?path=/in-do&security=tls&insecure=0&host=ads.ruangguru.com.cyylr.eu.cc&type=ws&allowInsecure=0&sni=ads.ruangguru.com.cyylr.eu.cc#%F0%9F%8C%90%20Anycast-IP%20%7C%20%F0%9F%87%A8%F0%9F%87%A6%20%F0%9F%87%AB%F0%9F%87%AE%20%F0%9F%87%AE%F0%9F%87%B3%20%5B%2ACIDR%5D 🚀 🥭 🔥
+trojan://6b7f37af-a853-4f01-a031-5fa4eca4f5bf@141.193.213.10:443?path=/in-do&security=tls&insecure=0&host=ads.ruangguru.com.cyylr.eu.cc&type=ws&allowInsecure=0&sni=ads.ruangguru.com.cyylr.eu.cc#🇧🇸%20Эщкерия%20%7C%20%F0%9F%87%A8%F0%9F%87%A6%20%F0%9F%87%AB%F0%9F%87%AE%20[🏳️LTE]%20|%20🥭🔧
+trojan://humanity@216.24.57.1:443?type=ws&security=tls&path=%2Fassignment&host=www.calmloud.com&sni=www.calmloud.com&allowInsecure=0&ech=ip.gs%2Budp%3A%2F%2F8.8.8.8#%F0%9F%8C%90%20Anycast-IP%20%7C%20%F0%9F%87%AB%F0%9F%87%B7%20%5B%2ACIDR%5D 🚀 🥭 🔥
+trojan://humanity@216.24.57.1:443?type=ws&security=tls&path=%2Fassignment&host=www.calmloud.com&sni=www.calmloud.com&allowInsecure=0&ech=ip.gs%2Budp%3A%2F%2F8.8.8.8#🇧🇸%20Эщкерия%20%7C%20%F0%9F%87%AB%F0%9F%87%B7%20[🏳️LTE]%20|%20🥭🔧
+trojan://humanity@216.24.57.1:443?type=ws&security=tls&path=%2Fassignment&host=www.creationlong.org&sni=www.creationlong.org&allowInsecure=0&ech=ip.gs%2Budp%3A%2F%2F8.8.8.8#%F0%9F%8C%90%20Anycast-IP%20%7C%20%F0%9F%87%B5%F0%9F%87%B1%20%5B%2ACIDR%5D 🚀 🥭 🔥
+trojan://humanity@216.24.57.1:443?type=ws&security=tls&path=%2Fassignment&host=www.creationlong.org&sni=www.creationlong.org&allowInsecure=0&ech=ip.gs%2Budp%3A%2F%2F8.8.8.8#🇧🇸%20Эщкерия%20%7C%20%F0%9F%87%B5%F0%9F%87%B1%20[🏳️LTE]%20|%20🥭🔧
+vless://%40a_amr79@141.193.213.11:443?Telegram=@GozargahAzad,@GozargahAzad,@GozargahAzad,@GozargahAzad,@GozargahAzad,@GozargahAzad,@GozargahAzad&Telegram=@GozargahAzad,@GozargahAzad,@GozargahAzad,@GozargahAzad,@GozargahAzad,@GozargahAzad,@GozargahAzad&Telegram=@GozargahAzad,@GozargahAzad,@GozargahAzad,@GozargahAzad,@GozargahAzad,@GozargahAzad,@GozargahAzad&Telegram=@GozargahAzad,@GozargahAzad,@GozargahAzad,@GozargahAzad,@GozargahAzad,@GozargahAzad,@GozargahAzad&path=/my-wbv&security=tls&encryption=none&insecure=0&host=unnes.ac.id.cyylr.eu.cc&type=ws&allowInsecure=0&sni=unnes.ac.id.cyylr.eu.cc#🇧🇸%20Эщкерия%20%7C%20%F0%9F%87%A8%F0%9F%87%A6%20%F0%9F%87%AB%F0%9F%87%AE%20[🏳️LTE]%20|%20🥭🔧
+vless://%40a_amr79@141.193.213.11:443?path=%2Fmy-wbv&security=tls&encryption=none&insecure=0&host=unnes.ac.id.cyylr.eu.cc&type=ws&allowInsecure=0&sni=unnes.ac.id.cyylr.eu.cc#%F0%9F%8C%90%20Anycast-IP%20%7C%20%F0%9F%87%A8%F0%9F%87%A6%20%F0%9F%87%AB%F0%9F%87%AE%20%F0%9F%87%B2%F0%9F%87%BE%20%5B%2ACIDR%5D 🚀 🥭 🔥
+vless://%40a_amr79@141.193.213.11:443?security=tls&type=ws&path=%2Fmy-wbv&host=unnes.ac.id.cyylr.eu.cc&sni=unnes.ac.id.cyylr.eu.cc&fp=chrome&encryption=none#🇧🇸%20Эщкерия%20%7C%20%F0%9F%87%A8%F0%9F%87%A6%20%F0%9F%87%AB%F0%9F%87%AE%20[🏳️LTE]%20|%20🥭🔧
+vless://%40a_amr79@141.193.213.11:443?security=tls&type=ws&path=/my-wbv&host=unnes.ac.id.cyylr.eu.cc&sni=unnes.ac.id.cyylr.eu.cc&fp=chrome&encryption=none#%F0%9F%8C%90%20Anycast-IP%20%7C%20%F0%9F%87%A8%F0%9F%87%A6%20%F0%9F%87%AB%F0%9F%87%AE%20%5B%2ACIDR%5D 🚀 🥭 🔥
+vless://0eca1f22-e5a1-4888-a0fa-c2345e87cf2f@bc-pl-1c.ray-balance.space:4443?mode=gun&security=none&encryption=none&authority=&type=grpc&serviceName=&burmalda=e2496081#🇸🇪🚀%20Швеция%20[🏳️LTE]%20|%20🥭🔥
+vless://0eca1f22-e5a1-4888-a0fa-c2345e87cf2f@bc-pl-1c.ray-balance.space:4443?serviceName=&encryption=none&authority=&mode=gun&security=none&type=grpc#🇸🇪🚀%20Швеция%20[🏳️LTE]%20|%20🥭🔥
+vless://19804f6b-3661-4eca-b294-ba37196dab5b@216.24.57.1:443?path=%2Fid-tksi&security=tls&alpn=http%2F1.1&encryption=none&insecure=0&host=graph.instagram.com.cyylr.eu.cc&fp=chrome&ech=ip.gs%2Budp%3A%2F%2F8.8.8.8&type=ws&allowInsecure=0&sni=graph.instagram.com.cyylr.eu.cc#%F0%9F%8C%90%20Anycast-IP%20%7C%20%F0%9F%87%A8%F0%9F%87%A6%20%F0%9F%87%AB%F0%9F%87%AE%20%F0%9F%87%AE%F0%9F%87%A9%20%5B%2ACIDR%5D 🚀 🥭 🔥
+vless://19804f6b-3661-4eca-b294-ba37196dab5b@216.24.57.1:443?path=%2Fid-tksi&security=tls&alpn=http%2F1.1&encryption=none&insecure=0&host=graph.instagram.com.cyylr.eu.cc&fp=chrome&ech=ip.gs%2Budp%3A%2F%2F8.8.8.8&type=ws&allowInsecure=0&sni=graph.instagram.com.cyylr.eu.cc#🇧🇸%20Эщкерия%20%7C%20%F0%9F%87%A8%F0%9F%87%A6%20%F0%9F%87%AB%F0%9F%87%AE%20[🏳️LTE]%20|%20🥭🔧
+vless://1a5b24bc-6180-4fa7-922d-ba7ee8a7a2b7@216.24.57.1:443?security=tls&type=ws&path=/id-pusat&host=support.zoom.us.cyylr.eu.cc&alpn=http/1.1&sni=support.zoom.us.cyylr.eu.cc&fp=chrome&encryption=none#%F0%9F%8C%90%20Anycast-IP%20%7C%20%F0%9F%87%A8%F0%9F%87%A6%20%F0%9F%87%AB%F0%9F%87%AE%20%5B%2ACIDR%5D 🚀 🥭 🔥
+vless://1a5b24bc-6180-4fa7-922d-ba7ee8a7a2b7@216.24.57.1:443?security=tls&type=ws&path=/id-pusat&host=support.zoom.us.cyylr.eu.cc&alpn=http/1.1&sni=support.zoom.us.cyylr.eu.cc&fp=chrome&encryption=none#🇧🇸%20Эщкерия%20%7C%20%F0%9F%87%A8%F0%9F%87%A6%20%F0%9F%87%AB%F0%9F%87%AE%20%F0%9F%87%AE%F0%9F%87%A9%20[🏳️LTE]%20|%20🥭🔧
+vless://1a5b24bc-6180-4fa7-922d-ba7ee8a7a2b7@216.24.57.1:443?type=ws&security=tls&encryption=none&path=%2Fid-pusat&host=support.zoom.us.cyylr.eu.cc&sni=support.zoom.us.cyylr.eu.cc&fp=chrome&alpn=http%252F1.1&headerType=none&allowInsecure=1#🇧🇸%20Эщкерия%20%7C%20%F0%9F%87%A8%F0%9F%87%A6%20%F0%9F%87%AB%F0%9F%87%AE%20[🏳️LTE]%20|%20🥭🔧
+vless://2397be53-f62b-42f7-80fe-5d22627c03a9@185.241.194.34:5987?flow=xtls-rprx-vision&encryption=none&type=tcp&security=reality&fp=chrome&sni=surfvpn24.ru&pbk=L4kWgoTxqQc4kAGLrF_ARMRVMPy3_WInhjwt_8OPenU&sid=c19de8fa#%F0%9F%87%B7%F0%9F%87%BA%20Russia%20%5B%2ACIDR%5D%20VK 🚀 🥭 🔥
+vless://2397be53-f62b-42f7-80fe-5d22627c03a9@185.241.194.34:5994?flow=xtls-rprx-vision&encryption=none&type=tcp&security=reality&fp=chrome&sni=surfvpn24.ru&pbk=trrVBG2fDc411qxZQ8__7x6ZlJC4lI2m_mwl-O-BEjQ&sid=c19de8fa#%F0%9F%87%B7%F0%9F%87%BA%20Russia%20%5B%2ACIDR%5D%20VK 🚀 🥭 🔥
+vless://565b50d4-604d-4a60-9fc2-d9d3dac0aec6@216.24.57.1:443?&security=tls&alpn=http/1.1&sni=dl.cvs.freefiremobile.com.cyylr.eu.cc&type=ws&headerType=none&host=dl.cvs.freefiremobile.com.cyylr.eu.cc&path=%2Fid-pusat#%F0%9F%8C%90%20Anycast-IP%20%7C%20%F0%9F%87%A8%F0%9F%87%A6%20%F0%9F%87%AB%F0%9F%87%AE%20%F0%9F%87%AE%F0%9F%87%A9%20%5B%2ACIDR%5D 🚀 🥭 🔥
+vless://565b50d4-604d-4a60-9fc2-d9d3dac0aec6@216.24.57.1:443?&security=tls&alpn=http/1.1&sni=dl.cvs.freefiremobile.com.cyylr.eu.cc&type=ws&headerType=none&host=dl.cvs.freefiremobile.com.cyylr.eu.cc&path=%2Fid-pusat#🇧🇸%20Эщкерия%20%7C%20%F0%9F%87%A8%F0%9F%87%A6%20%F0%9F%87%AB%F0%9F%87%AE%20%F0%9F%87%AE%F0%9F%87%A9%20%F0%9F%87%B2%F0%9F%87%BE%20[🏳️LTE]%20|%20🥭🔧
+vless://565b50d4-604d-4a60-9fc2-d9d3dac0aec6@216.24.57.1:443?&security=tls&fp=chrome&sni=dl.cvs.freefiremobile.com.cyylr.eu.cc&type=ws&headerType=none&host=dl.cvs.freefiremobile.com.cyylr.eu.cc&path=%2Fid-pusat#%F0%9F%8C%90%20Anycast-IP%20%7C%20%F0%9F%87%A8%F0%9F%87%A6%20%F0%9F%87%AB%F0%9F%87%AE%20%5B%2ACIDR%5D 🚀 🥭 🔥
+vless://565b50d4-604d-4a60-9fc2-d9d3dac0aec6@216.24.57.1:443?&security=tls&fp=chrome&sni=dl.cvs.freefiremobile.com.cyylr.eu.cc&type=ws&headerType=none&host=dl.cvs.freefiremobile.com.cyylr.eu.cc&path=%2Fid-pusat#🇧🇸%20Эщкерия%20%7C%20%F0%9F%87%A8%F0%9F%87%A6%20%F0%9F%87%AB%F0%9F%87%AE%20%F0%9F%87%B2%F0%9F%87%BE%20[🏳️LTE]%20|%20🥭🔧
+vless://565b50d4-604d-4a60-9fc2-d9d3dac0aec6@216.24.57.1:443?security=tls&type=ws&path=/id-pusat&host=dl.cvs.freefiremobile.com.cyylr.eu.cc&alpn=http/1.1&sni=dl.cvs.freefiremobile.com.cyylr.eu.cc&fp=chrome&encryption=none#%F0%9F%8C%90%20Anycast-IP%20%7C%20%F0%9F%87%A8%F0%9F%87%A6%20%F0%9F%87%AB%F0%9F%87%AE%20%F0%9F%87%AE%F0%9F%87%A9%20%5B%2ACIDR%5D 🚀 🥭 🔥
+vless://565b50d4-604d-4a60-9fc2-d9d3dac0aec6@216.24.57.1:443?security=tls&type=ws&path=/id-pusat&host=dl.cvs.freefiremobile.com.cyylr.eu.cc&alpn=http/1.1&sni=dl.cvs.freefiremobile.com.cyylr.eu.cc&fp=chrome&encryption=none#🇧🇸%20Эщкерия%20%7C%20%F0%9F%87%A8%F0%9F%87%A6%20%F0%9F%87%AB%F0%9F%87%AE%20[🏳️LTE]%20|%20🥭🔧
+vless://5dbfed06-dd62-48c0-8e39-b4835defcdb0@216.24.57.1:443?encryption=none&type=ws&host=investors.spotify.com.cyylr.eu.cc&path=%2Fsg-amz&security=tls&alpn=http%2F1.1&fp=chrome&sni=investors.spotify.com.cyylr.eu.cc#%F0%9F%8C%90%20Anycast-IP%20%7C%20%F0%9F%87%A8%F0%9F%87%A6%20%F0%9F%87%AB%F0%9F%87%AE%20%F0%9F%87%AE%F0%9F%87%A9%20%F0%9F%87%B2%F0%9F%87%BE%20%5B%2ACIDR%5D 🚀 🥭 🔥
+vless://5dbfed06-dd62-48c0-8e39-b4835defcdb0@216.24.57.1:443?encryption=none&type=ws&host=investors.spotify.com.cyylr.eu.cc&path=%2Fsg-amz&security=tls&alpn=http%2F1.1&fp=chrome&sni=investors.spotify.com.cyylr.eu.cc#🇧🇸%20Эщкерия%20%7C%20%F0%9F%87%A8%F0%9F%87%A6%20%F0%9F%87%AB%F0%9F%87%AE%20[🏳️LTE]%20|%20🥭🔧
+vless://5dbfed06-dd62-48c0-8e39-b4835defcdb0@216.24.57.1:443?security=tls&sni=investors.spotify.com.cyylr.eu.cc&type=ws&host=investors.spotify.com.cyylr.eu.cc&path=%2Fsg-amz&alpn=http/1.1#🇧🇸%20Эщкерия%20%7C%20%F0%9F%87%A8%F0%9F%87%A6%20%F0%9F%87%AB%F0%9F%87%AE%20%F0%9F%87%B8%F0%9F%87%AC%20[🏳️LTE]%20|%20🥭🔧
+vless://6e593426-1a8e-4226-984f-0ea174e218c7@216.24.57.1:443?&security=tls&alpn=http/1.1&sni=dl.cvs.freefiremobile.com.cyylr.eu.cc&type=ws&headerType=none&host=dl.cvs.freefiremobile.com.cyylr.eu.cc&path=%2Fid-pusat#%F0%9F%8C%90%20Anycast-IP%20%7C%20%F0%9F%87%A8%F0%9F%87%A6%20%F0%9F%87%AB%F0%9F%87%AE%20%F0%9F%87%AE%F0%9F%87%A9%20%5B%2ACIDR%5D 🚀 🥭 🔥
+vless://6e593426-1a8e-4226-984f-0ea174e218c7@216.24.57.1:443?&security=tls&fp=chrome&alpn=http/1.1&sni=dl.cvs.freefiremobile.com.cyylr.eu.cc&type=ws&headerType=none&host=dl.cvs.freefiremobile.com.cyylr.eu.cc&path=%2Fid-pusat#%F0%9F%8C%90%20Anycast-IP%20%7C%20%F0%9F%87%A8%F0%9F%87%A6%20%F0%9F%87%AB%F0%9F%87%AE%20%F0%9F%87%AE%F0%9F%87%A9%20%5B%2ACIDR%5D 🚀 🥭 🔥
+vless://6e593426-1a8e-4226-984f-0ea174e218c7@216.24.57.1:443?&security=tls&fp=chrome&alpn=http/1.1&sni=dl.cvs.freefiremobile.com.cyylr.eu.cc&type=ws&headerType=none&host=dl.cvs.freefiremobile.com.cyylr.eu.cc&path=%2Fid-pusat#🇧🇸%20Эщкерия%20%7C%20%F0%9F%87%A8%F0%9F%87%A6%20%F0%9F%87%AB%F0%9F%87%AE%20[🏳️LTE]%20|%20🥭🔧
+vless://6e593426-1a8e-4226-984f-0ea174e218c7@216.24.57.1:443?encryption=none&type=ws&host=dl.cvs.freefiremobile.com.cyylr.eu.cc&path=%2Fid-pusat&security=tls&fp=chrome&sni=dl.cvs.freefiremobile.com.cyylr.eu.cc#%F0%9F%8C%90%20Anycast-IP%20%7C%20%F0%9F%87%A8%F0%9F%87%A6%20%F0%9F%87%AB%F0%9F%87%AE%20%5B%2ACIDR%5D 🚀 🥭 🔥
+vless://6e593426-1a8e-4226-984f-0ea174e218c7@216.24.57.1:443?encryption=none&type=ws&host=dl.cvs.freefiremobile.com.cyylr.eu.cc&path=%2Fid-pusat&security=tls&fp=chrome&sni=dl.cvs.freefiremobile.com.cyylr.eu.cc#🇧🇸%20Эщкерия%20%7C%20%F0%9F%87%A8%F0%9F%87%A6%20%F0%9F%87%AB%F0%9F%87%AE%20[🏳️LTE]%20|%20🥭🔧
+vless://6e84b643-1c90-41e7-9028-ce4dea28c21c@pro-ru-84.emrata.top:443?type=tcp&security=reality&sni=ads.x5.ru&fp=firefox&flow=xtls-rprx-vision&pbk=AAZjVvbC7AwPKot_1ygO5VMpN7XYifCA7lG0RNR5sEk#%F0%9F%87%B7%F0%9F%87%BA%20Россия%20%7C%20%F0%9F%8C%90%20[🏳️LTE]%20|%20🥭🔧%20%20
+vless://6e84b643-1c90-41e7-9028-ce4dea28c21c@pro-ru-84.emrata.top:443?type=tcp&security=reality&sni=ads.x5.ru&fp=firefox&flow=xtls-rprx-vision&pbk=AAZjVvbC7AwPKot_1ygO5VMpN7XYifCA7lG0RNR5sEk#🇧🇸🚀%20Эщкерия%20🔐%20[🏳️LTE]%20|%20🥭🔥
+vless://838e036b-f229-480b-b0ef-86b1dc711add@193.233.202.1:443?fp=chrome&sid=87ab&spx=/&headerType=none&type=tcp&encryption=none&pbk=RCp37oAO4E30SKBraaFaeUXeqvLGS7yH40VHl5a_6RE&sni=yahoo.com&security=reality#🇪🇺🚀%20Европа%20[🏳️LTE]%20|%20🥭🔥
+vless://838e036b-f229-480b-b0ef-86b1dc711add@193.233.202.1:443?sid=87ab&spx=/&type=tcp&fp=chrome&security=reality&headerType=none&sni=yahoo.com&pbk=RCp37oAO4E30SKBraaFaeUXeqvLGS7yH40VHl5a_6RE&encryption=none#🇪🇺🚀%20Европа%20[🏳️LTE]%20|%20🥭🔥
+vless://882e17c8-b013-4e99-9774-36e26e5001ff@185.242.19.249:443?encryption=none&type=xhttp&security=tls&host=top3739667002.mwscdn.ru&path=%2Flivestreamcontent%2F&mode=packet-up&extra=%7B%22host%22%3A%22%22%2C%22path%22%3A%22%22%2C%22mode%22%3A%22%22%2C%22headers%22%3Anull%2C%22xPaddingBytes%22%3A%22100-1000%22%2C%22xPaddingObfsMode%22%3Afalse%2C%22xPaddingKey%22%3A%22%22%2C%22xPaddingHeader%22%3A%22%22%2C%22xPaddingPlacement%22%3A%22%22%2C%22xPaddingMethod%22%3A%22%22%2C%22uplinkHTTPMethod%22%3A%22PUT%22%2C%22sessionPlacement%22%3A%22%22%2C%22sessionKey%22%3A%22%22%2C%22seqPlacement%22%3A%22%22%2C%22seqKey%22%3A%22%22%2C%22uplinkDataPlacement%22%3A%22%22%2C%22uplinkDataKey%22%3A%22%22%2C%22uplinkChunkSize%22%3A0%2C%22noGRPCHeader%22%3Afalse%2C%22noSSEHeader%22%3Afalse%2C%22scMaxEachPostBytes%22%3A%221000000%22%2C%22scMinPostsIntervalMs%22%3A%2230%22%2C%22scMaxBufferedPosts%22%3A0%2C%22scStreamUpServerSecs%22%3A%220%22%2C%22xmux%22%3A%7B%22maxConcurrency%22%3A%220%22%2C%22maxConnections%22%3A%220%22%2C%22cMaxReuseTimes%22%3A%220%22%2C%22hMaxRequestTimes%22%3A%220%22%2C%22hMaxReusableSecs%22%3A%220%22%2C%22hKeepAlivePeriod%22%3A0%7D%2C%22downloadSettings%22%3Anull%2C%22extra%22%3Anull%7D&sni=top3739667002.mwscdn.ru#%F0%9F%87%B2%F0%9F%87%A9%20Moldova%20%5B%2ACIDR%5D 🚀 🥭 🔥
+vless://882e17c8-b013-4e99-9774-36e26e5001ff@185.242.19.249:443?encryption=none&type=xhttp&security=tls&host=top3739667002.mwscdn.ru&path=%2Flivestreamcontent%2F&mode=packet-up&extra=%7B%22host%22%3A%22%22%2C%22path%22%3A%22%22%2C%22mode%22%3A%22%22%2C%22headers%22%3Anull%2C%22xPaddingBytes%22%3A%22100-1000%22%2C%22xPaddingObfsMode%22%3Afalse%2C%22xPaddingKey%22%3A%22%22%2C%22xPaddingHeader%22%3A%22%22%2C%22xPaddingPlacement%22%3A%22%22%2C%22xPaddingMethod%22%3A%22%22%2C%22uplinkHTTPMethod%22%3A%22PUT%22%2C%22sessionPlacement%22%3A%22%22%2C%22sessionKey%22%3A%22%22%2C%22seqPlacement%22%3A%22%22%2C%22seqKey%22%3A%22%22%2C%22uplinkDataPlacement%22%3A%22%22%2C%22uplinkDataKey%22%3A%22%22%2C%22uplinkChunkSize%22%3A0%2C%22noGRPCHeader%22%3Afalse%2C%22noSSEHeader%22%3Afalse%2C%22scMaxEachPostBytes%22%3A%221000000%22%2C%22scMinPostsIntervalMs%22%3A%2230%22%2C%22scMaxBufferedPosts%22%3A0%2C%22scStreamUpServerSecs%22%3A%220%22%2C%22xmux%22%3A%7B%22maxConcurrency%22%3A%220%22%2C%22maxConnections%22%3A%220%22%2C%22cMaxReuseTimes%22%3A%220%22%2C%22hMaxRequestTimes%22%3A%220%22%2C%22hMaxReusableSecs%22%3A%220%22%2C%22hKeepAlivePeriod%22%3A0%7D%2C%22downloadSettings%22%3Anull%2C%22extra%22%3Anull%7D&sni=top3739667002.mwscdn.ru#%F0%9F%87%B2%F0%9F%87%A9%20Молдова%20[🏳️LTE]%20|%20🥭🔧
+vless://882e17c8-b013-4e99-9774-36e26e5001ff@185.242.19.249:443?encryption=none&type=xhttp&security=tls&host=top3739667002.mwscdn.ru&path=/livestreamcontent/&mode=packet-up&extra=null&fp=chrome&sni=top3739667002.mwscdn.ru#%F0%9F%87%B2%F0%9F%87%A9%20Moldova%20%5B%2ACIDR%5D 🚀 🥭 🔥
+vless://882e17c8-b013-4e99-9774-36e26e5001ff@185.242.19.249:443?type=xhttp&security=tls&path=/livestreamcontent/&sni=top3739667002.mwscdn.ru&fp=chrome#%F0%9F%87%B2%F0%9F%87%A9%20Moldova%20%5B%2ACIDR%5D 🚀 🥭 🔥
+vless://882e17c8-b013-4e99-9774-36e26e5001ff@185.242.19.249:443?type=xhttp&security=tls&path=/livestreamcontent/&sni=top3739667002.mwscdn.ru&fp=chrome#%F0%9F%87%B2%F0%9F%87%A9%20Молдова%20[🏳️LTE]%20|%20🥭🔧
+vless://882e17c8-b013-4e99-9774-36e26e5001ff@185.242.19.249:443?type=xhttp&security=tls&sni=top3739667002.mwscdn.ru&path=/livestreamcontent/&mode=packet-up&extra={"host":"","path":"","mode":"","headers":null,"xPaddingBytes":"100-1000","xPaddingObfsMode":false,"xPaddingKey":"","xPaddingHeader":"","xPaddingPlacement":"","xPaddingMethod":"","uplinkHTTPMethod":"PUT","sessionPlacement":"","sessionKey":"","seqPlacement":"","seqKey":"","uplinkDataPlacement":"","uplinkDataKey":"","uplinkChunkSize":0,"noGRPCHeader":false,"noSSEHeader":false,"scMaxEachPostBytes":"1000000","scMinPostsIntervalMs":"30","scMaxBufferedPosts":0,"scStreamUpServerSecs":"0","xmux":{"maxConcurrency":"0","maxConnections":"0","cMaxReuseTimes":"0","hMaxRequestTimes":"0","hMaxReusableSecs":"0","hKeepAlivePeriod":0},"downloadSettings":null,"extra":null}#%F0%9F%87%B2%F0%9F%87%A9%20Молдова%20[🏳️LTE]%20|%20🥭🔧
+vless://882e17c8-b013-4e99-9774-36e26e5001ff@185.242.19.250:443?encryption=none&type=xhttp&security=tls&host=top3739667002.mwscdn.ru&path=%2Flivestreamcontent%2F&mode=packet-up&extra=%7B%22host%22%3A%22%22%2C%22path%22%3A%22%22%2C%22mode%22%3A%22%22%2C%22headers%22%3Anull%2C%22xPaddingBytes%22%3A%22100-1000%22%2C%22xPaddingObfsMode%22%3Afalse%2C%22xPaddingKey%22%3A%22%22%2C%22xPaddingHeader%22%3A%22%22%2C%22xPaddingPlacement%22%3A%22%22%2C%22xPaddingMethod%22%3A%22%22%2C%22uplinkHTTPMethod%22%3A%22PUT%22%2C%22sessionPlacement%22%3A%22%22%2C%22sessionKey%22%3A%22%22%2C%22seqPlacement%22%3A%22%22%2C%22seqKey%22%3A%22%22%2C%22uplinkDataPlacement%22%3A%22%22%2C%22uplinkDataKey%22%3A%22%22%2C%22uplinkChunkSize%22%3A0%2C%22noGRPCHeader%22%3Afalse%2C%22noSSEHeader%22%3Afalse%2C%22scMaxEachPostBytes%22%3A%221000000%22%2C%22scMinPostsIntervalMs%22%3A%2230%22%2C%22scMaxBufferedPosts%22%3A0%2C%22scStreamUpServerSecs%22%3A%220%22%2C%22xmux%22%3A%7B%22maxConcurrency%22%3A%220%22%2C%22maxConnections%22%3A%220%22%2C%22cMaxReuseTimes%22%3A%220%22%2C%22hMaxRequestTimes%22%3A%220%22%2C%22hMaxReusableSecs%22%3A%220%22%2C%22hKeepAlivePeriod%22%3A0%7D%2C%22downloadSettings%22%3Anull%2C%22extra%22%3Anull%7D&sni=top3739667002.mwscdn.ru#%F0%9F%87%B2%F0%9F%87%A9%20Moldova%20%5B%2ACIDR%5D 🚀 🥭 🔥
+vless://882e17c8-b013-4e99-9774-36e26e5001ff@185.242.19.250:443?encryption=none&type=xhttp&security=tls&host=top3739667002.mwscdn.ru&path=%2Flivestreamcontent%2F&mode=packet-up&extra=%7B%22host%22%3A%22%22%2C%22path%22%3A%22%22%2C%22mode%22%3A%22%22%2C%22headers%22%3Anull%2C%22xPaddingBytes%22%3A%22100-1000%22%2C%22xPaddingObfsMode%22%3Afalse%2C%22xPaddingKey%22%3A%22%22%2C%22xPaddingHeader%22%3A%22%22%2C%22xPaddingPlacement%22%3A%22%22%2C%22xPaddingMethod%22%3A%22%22%2C%22uplinkHTTPMethod%22%3A%22PUT%22%2C%22sessionPlacement%22%3A%22%22%2C%22sessionKey%22%3A%22%22%2C%22seqPlacement%22%3A%22%22%2C%22seqKey%22%3A%22%22%2C%22uplinkDataPlacement%22%3A%22%22%2C%22uplinkDataKey%22%3A%22%22%2C%22uplinkChunkSize%22%3A0%2C%22noGRPCHeader%22%3Afalse%2C%22noSSEHeader%22%3Afalse%2C%22scMaxEachPostBytes%22%3A%221000000%22%2C%22scMinPostsIntervalMs%22%3A%2230%22%2C%22scMaxBufferedPosts%22%3A0%2C%22scStreamUpServerSecs%22%3A%220%22%2C%22xmux%22%3A%7B%22maxConcurrency%22%3A%220%22%2C%22maxConnections%22%3A%220%22%2C%22cMaxReuseTimes%22%3A%220%22%2C%22hMaxRequestTimes%22%3A%220%22%2C%22hMaxReusableSecs%22%3A%220%22%2C%22hKeepAlivePeriod%22%3A0%7D%2C%22downloadSettings%22%3Anull%2C%22extra%22%3Anull%7D&sni=top3739667002.mwscdn.ru#%F0%9F%87%B2%F0%9F%87%A9%20Молдова%20[🏳️LTE]%20|%20🥭🔧
+vless://882e17c8-b013-4e99-9774-36e26e5001ff@185.242.19.250:443?encryption=none&type=xhttp&security=tls&host=top3739667002.mwscdn.ru&path=/livestreamcontent/&mode=packet-up&extra=null&fp=chrome&sni=top3739667002.mwscdn.ru#%F0%9F%87%B2%F0%9F%87%A9%20Moldova%20%5B%2ACIDR%5D 🚀 🥭 🔥
+vless://882e17c8-b013-4e99-9774-36e26e5001ff@185.242.19.250:443?encryption=none&type=xhttp&security=tls&host=top3739667002.mwscdn.ru&path=/livestreamcontent/&mode=packet-up&extra=null&fp=chrome&sni=top3739667002.mwscdn.ru#%F0%9F%87%B2%F0%9F%87%A9%20Молдова%20[🏳️LTE]%20|%20🥭🔧
+vless://882e17c8-b013-4e99-9774-36e26e5001ff@185.242.19.250:443?type=xhttp&security=tls&path=/livestreamcontent/&sni=top3739667002.mwscdn.ru&fp=chrome#%F0%9F%87%B2%F0%9F%87%A9%20Moldova%20%5B%2ACIDR%5D 🚀 🥭 🔥
+vless://9232a847-8f7d-4548-a23a-a8b3550e0f15@141.193.213.11:443?path=/id-tksi&security=tls&encryption=none&host=grabacademyportal.grab.com.cyylr.eu.cc&type=ws&sni=grabacademyportal.grab.com.cyylr.eu.cc#🇧🇸%20Эщкерия%20%7C%20%F0%9F%87%A8%F0%9F%87%A6%20%F0%9F%87%AB%F0%9F%87%AE%20[🏳️LTE]%20|%20🥭🔧
+vless://9232a847-8f7d-4548-a23a-a8b3550e0f15@141.193.213.11:443?security=tls&type=ws&path=%2Fid-tksi&host=grabacademyportal.grab.com.cyylr.eu.cc&sni=grabacademyportal.grab.com.cyylr.eu.cc&fp=chrome&encryption=none#%F0%9F%8C%90%20Anycast-IP%20%7C%20%F0%9F%87%A8%F0%9F%87%A6%20%F0%9F%87%AB%F0%9F%87%AE%20%5B%2ACIDR%5D 🚀 🥭 🔥
+vless://931729a8-3c20-4841-89a1-f18dc9ce0a6f@46.16.36.227:8443?encryption=none&type=tcp&security=tls&sni=cdn7-09.vk-cdnvideo.com#%F0%9F%87%AD%F0%9F%87%BA%20Hungary%20%5B%2ACIDR%5D 🚀 🥭 🔥
+vless://931729a8-3c20-4841-89a1-f18dc9ce0a6f@82.202.138.158:8443?encryption=none&type=tcp&security=tls&sni=cdn7-09.vk-cdnvideo.com#%F0%9F%87%AD%F0%9F%87%BA%20Венгрия%20%7C%20%F0%9F%8C%90%20[🏳️LTE]%20|%20🥭🔧
+vless://931729a8-3c20-4841-89a1-f18dc9ce0a6f@82.202.138.158:8443?security=tls&type=tcp&sni=cdn7-09.vk-cdnvideo.com&fp=chrome&encryption=none#%F0%9F%87%AD%F0%9F%87%BA%20Венгрия%20%7C%20%F0%9F%8C%90%20[🏳️LTE]%20|%20🥭🔧
+vless://931729a8-3c20-4841-89a1-f18dc9ce0a6f@85.208.85.91:8443?encryption=none&type=tcp&security=tls&fp=chrome&sni=cdn7-09.vk-cdnvideo.com#%F0%9F%87%AD%F0%9F%87%BA%20Hungary%20%5B%2ACIDR%5D 🚀 🥭 🔥
+vless://931729a8-3c20-4841-89a1-f18dc9ce0a6f@85.208.85.91:8443?encryption=none&type=tcp&security=tls&sni=cdn7-09.vk-cdnvideo.com#%F0%9F%87%AD%F0%9F%87%BA%20Hungary%20%5B%2ACIDR%5D 🚀 🥭 🔥
+vless://@141.193.213.11:443?security=tls&type=ws&path=/my-wbv&host=unnes.ac.id.cyylr.eu.cc&sni=unnes.ac.id.cyylr.eu.cc&fp=chrome&encryption=none#%F0%9F%8C%90%20Anycast-IP%20%7C%20%F0%9F%87%A8%F0%9F%87%A6%20%F0%9F%87%AB%F0%9F%87%AE%20%5B%2ACIDR%5D 🚀 🥭 🔥
+vless://@141.193.213.11:443?security=tls&type=ws&path=/my-wbv&host=unnes.ac.id.cyylr.eu.cc&sni=unnes.ac.id.cyylr.eu.cc&fp=chrome&encryption=none#🇧🇸%20Эщкерия%20%7C%20%F0%9F%87%A8%F0%9F%87%A6%20%F0%9F%87%AB%F0%9F%87%AE%20[🏳️LTE]%20|%20🥭🔧
+vless://c286e7ff-3a16-459f-8e17-59de2764cf2e@ovh.furkbalancer.net:2053?encryption=none&flow=xtls-rprx-vision&security=tls&sni=de.chocolatemango.live&type=tcp#%F0%9F%87%A9%F0%9F%87%AA%20Германия%20%7C%20%F0%9F%8C%90%20[🏳️LTE]%20|%20🥭🔧
+vless://c286e7ff-3a16-459f-8e17-59de2764cf2e@ovh.furkbalancer.net:2053?security=tls&type=tcp&sni=de.chocolatemango.live&fp=chrome&flow=xtls-rprx-vision&encryption=none#%F0%9F%87%A9%F0%9F%87%AA%20Германия%20%7C%20%F0%9F%8C%90%20[🏳️LTE]%20|%20🥭🔧
+vless://c510a8f8-4191-489f-9b92-03a827031912@158.160.150.233:443?flow=xtls-rprx-vision&encryption=none&type=tcp&security=reality&fp=chrome&sni=ads.x5.ru&pbk=r5WB5FnSCt4eeBC1FJMfkWHbzsMuabo0Rc6wuAhlZUs&sid=65c7748be8#%F0%9F%87%A8%F0%9F%87%BF%20Czechia%20%5B%2ACIDR%5D%20YA 🚀 🥭 🔥
+vless://c510a8f8-4191-489f-9b92-03a827031912@158.160.22.127:443?flow=xtls-rprx-vision&encryption=none&type=tcp&security=reality&fp=edge&sni=api-maps.yandex.ru&pbk=r5WB5FnSCt4eeBC1FJMfkWHbzsMuabo0Rc6wuAhlZUs&sid=cf4d#%F0%9F%87%A8%F0%9F%87%BF%20Czechia%20%5B%2ACIDR%5D%20YA 🚀 🥭 🔥
+vless://cbc27e56-38a1-4b0d-bce3-f9e7dcb807a4@89.208.208.92:9443?flow=xtls-rprx-vision&encryption=none&type=tcp&security=reality&fp=chrome&sni=loadtest.dev.urent.ru&pbk=aVu6XB9_RKR1xLtusyQ1_YOWCs4Ofi9GEJd6oERNH2Q&sid=689def22fcb54e86#🇧🇸%20Эщкерия%20%7C%20%F0%9F%87%A9%F0%9F%87%AA%20%F0%9F%87%AC%F0%9F%87%A7%20[🏳️LTE]%20|%20🥭🔧%20%20
+vless://cfb70000-ed61-4a7e-89a3-2b9c2caa6001@185.242.19.250:443?encryption=none&type=xhttp&security=tls&host=top3739667002.mwscdn.ru&path=%2Flivestreamcontent%2F&mode=packet-up&extra=null&fp=chrome&sni=top3739667002.mwscdn.ru#%F0%9F%87%B2%F0%9F%87%A9%20Moldova%20%5B%2ACIDR%5D 🚀 🥭 🔥
+vless://cfb70000-ed61-4a7e-89a3-2b9c2caa6001@185.242.19.250:443?encryption=none&type=xhttp&security=tls&host=top3739667002.mwscdn.ru&path=/livestreamcontent/&extra=null&fp=chrome&sni=top3739667002.mwscdn.ru#%F0%9F%87%B2%F0%9F%87%A9%20Moldova%20%5B%2ACIDR%5D 🚀 🥭 🔥
+vless://cfb70000-ed61-4a7e-89a3-2b9c2caa6001@185.242.19.250:443?encryption=none&type=xhttp&security=tls&host=top3739667002.mwscdn.ru&path=/livestreamcontent/&extra=null&fp=chrome&sni=top3739667002.mwscdn.ru#%F0%9F%87%B2%F0%9F%87%A9%20Молдова%20[🏳️LTE]%20|%20🥭🔧
+vless://cfb70000-ed61-4a7e-89a3-2b9c2caa6001@185.242.19.250:443?encryption=none&type=xhttp&security=tls&host=top3739667002.mwscdn.ru&path=/livestreamcontent/&mode=packet-up&extra=null&fp=chrome&sni=top3739667002.mwscdn.ru#%F0%9F%87%B2%F0%9F%87%A9%20Молдова%20[🏳️LTE]%20|%20🥭🔧
+vless://cfb70000-ed61-4a7e-89a3-2b9c2caa6001@185.242.19.250:443?type=xhttp&security=tls&fp=chrome&sni=top3739667002.mwscdn.ru&path=%2Flivestreamcontent%2F#%F0%9F%87%B2%F0%9F%87%A9%20Moldova%20%5B%2ACIDR%5D 🚀 🥭 🔥
+vless://cfb70000-ed61-4a7e-89a3-2b9c2caa6001@185.242.19.250:443?type=xhttp&security=tls&fp=chrome&sni=top3739667002.mwscdn.ru&path=%2Flivestreamcontent%2F#%F0%9F%87%B2%F0%9F%87%A9%20Молдова%20[🏳️LTE]%20|%20🥭🔧
+vless://cfb70000-ed61-4a7e-89a3-2b9c2caa6001@185.242.19.250:443?type=xhttp&security=tls&fp=chrome&sni=top3739667002.mwscdn.ru&path=/livestreamcontent#%F0%9F%87%B2%F0%9F%87%A9%20Moldova%20%5B%2ACIDR%5D 🚀 🥭 🔥
+vless://cfb70000-ed61-4a7e-89a3-2b9c2caa6001@185.242.19.250:443?type=xhttp&security=tls&fp=chrome&sni=top3739667002.mwscdn.ru&path=/livestreamcontent#%F0%9F%87%B2%F0%9F%87%A9%20Молдова%20[🏳️LTE]%20|%20🥭🔧
+vless://cfb70000-ed61-4a7e-89a3-2b9c2caa6001@185.242.19.250:443?type=xhttp&security=tls&sni=top3739667002.mwscdn.ru&path=/livestreamcontent/&mode=auto#%F0%9F%87%B2%F0%9F%87%A9%20Moldova%20%5B%2ACIDR%5D 🚀 🥭 🔥
+vless://cfb70000-ed61-4a7e-89a3-2b9c2caa6001@185.242.19.250:443?type=xhttp&security=tls&sni=top3739667002.mwscdn.ru&path=/livestreamcontent/&mode=auto#%F0%9F%87%B2%F0%9F%87%A9%20Молдова%20[🏳️LTE]%20|%20🥭🔧
+vless://e2350ba4-16aa-455e-ae8b-f65102227cf4@158.160.252.176:443?path=/sequre/ws&security=tls&encryption=none&host=cloudflare.vhub.pro&type=ws&sni=cloudflare.vhub.pro#%F0%9F%87%A9%F0%9F%87%AA%20Германия%20[🏳️LTE]%20|%20🥭🔧%20%20
+vless://e4e7866d-920b-4a53-a8e2-6ae9b2a42fc2@185.227.108.195:11001?Telegram=@GozargahAzad,@GozargahAzad,@GozargahAzad,@GozargahAzad,@GozargahAzad,@GozargahAzad,@GozargahAzad&Telegram=@GozargahAzad,@GozargahAzad,@GozargahAzad,@GozargahAzad,@GozargahAzad,@GozargahAzad,@GozargahAzad&mode=multi&security=reality&encryption=none&type=tcp&flow=xtls-rprx-vision&pbk=srHjEPHLV0MkRL75Xgg1ICI20i7m0Xk5I3Olb_C-1T8&sid=fca9f531ff8a&sni=www.cloudflare.com&servername=www.cloudflare.com&spx=%2F&fp=ios&_t=28528d5a#🇪🇺🚀%20Европа%20[🏳️LTE]%20|%20🥭🔥
+vless://e4e7866d-920b-4a53-a8e2-6ae9b2a42fc2@185.227.108.195:11001?fp=ios&type=tcp&spx=%2F&pbk=srHjEPHLV0MkRL75Xgg1ICI20i7m0Xk5I3Olb_C-1T8&encryption=none&sni=www.cloudflare.com&servername=www.cloudflare.com&Telegram=@GozargahAzad,@GozargahAzad,@GozargahAzad,@GozargahAzad,@GozargahAzad,@GozargahAzad,@GozargahAzad&flow=xtls-rprx-vision&mode=multi&Telegram=@GozargahAzad,@GozargahAzad,@GozargahAzad,@GozargahAzad,@GozargahAzad,@GozargahAzad,@GozargahAzad&security=reality&sid=fca9f531ff8a&descriptions=СвободуИнтернету491#🇪🇺🚀%20Европа%20[🏳️LTE]%20|%20🥭🔥
+vless://e4e7866d-920b-4a53-a8e2-6ae9b2a42fc2@52.144.45.118:11003?Telegram=@GozargahAzad,@GozargahAzad,@GozargahAzad,@GozargahAzad,@GozargahAzad,@GozargahAzad,@GozargahAzad&mode=multi&security=reality&encryption=none&type=tcp&flow=xtls-rprx-vision&pbk=trNcbZqs-1u3CDgb9-NiL4AoZTtCvaq5trvMpgBYnDQ&sid=d2f6a308&sni=www.cloudflare.com&servername=www.cloudflare.com&spx=%2F&fp=safari&seq=you_are_beautiful2792#🇺🇸🚀%20США%20[🏳️LTE]%20|%20🥭🔥
+vless://e4e7866d-920b-4a53-a8e2-6ae9b2a42fc2@52.144.45.118:11003?mode=multi&security=reality&flow=xtls-rprx-vision&spx=%2F&sni=www.cloudflare.com&Telegram=@GozargahAzad,@GozargahAzad,@GozargahAzad,@GozargahAzad,@GozargahAzad,@GozargahAzad,@GozargahAzad&type=tcp&pbk=trNcbZqs-1u3CDgb9-NiL4AoZTtCvaq5trvMpgBYnDQ&encryption=none&servername=www.cloudflare.com&sid=d2f6a308&fp=safari&__rand=90f993dc#🇺🇸🚀%20США%20[🏳️LTE]%20|%20🥭🔥
+vless://e9728f25-f6cd-4a83-b851-f296d722b3d6@164.92.181.129:443?encryption=none&security=none&type=tcp&seq=you_are_beautiful6495#🇪🇺🚀%20Европа%20[🏳️LTE]%20|%20🥭🔥
+vless://e9728f25-f6cd-4a83-b851-f296d722b3d6@164.92.181.129:443?security=none&type=tcp&encryption=none#🇪🇺🚀%20Европа%20[🏳️LTE]%20|%20🥭🔥
+vless://ffc46551-cb3f-435c-a97a-b9bab4a1a0d2@63.141.128.237:443?Telegram=@GozargahAzad,@GozargahAzad,@GozargahAzad,@GozargahAzad,@GozargahAzad,@GozargahAzad,@GozargahAzad&mode=auto&path=/eQ7EK5s88mh1QkaLDB4v5psc&security=tls&alpn=h2&encryption=none&insecure=0&host=cd2.serviceali.ir&fp=chrome&type=xhttp&allowInsecure=0&sni=cd2.serviceali.ir#%F0%9F%87%AB%F0%9F%87%AE%20Финляндия%20%7C%20%F0%9F%8C%90%20[🏳️LTE]%20|%20🥭🔧
+vless://ffc46551-cb3f-435c-a97a-b9bab4a1a0d2@63.141.128.237:443?Telegram=@GozargahAzad,@GozargahAzad,@GozargahAzad,@GozargahAzad,@GozargahAzad,@GozargahAzad,@GozargahAzad&mode=auto&path=/eQ7EK5s88mh1QkaLDB4v5psc&security=tls&alpn=h2&encryption=none&insecure=0&host=cd2.serviceali.ir&fp=chrome&type=xhttp&allowInsecure=0&sni=cd2.serviceali.ir#%F0%9F%8C%90%20Anycast-IP%20%7C%20%F0%9F%87%AB%F0%9F%87%AE%20%5B%2ACIDR%5D 🚀 🥭 🔥
+vless://ffc46551-cb3f-435c-a97a-b9bab4a1a0d2@63.141.128.237:443?mode=auto&path=%2FeQ7EK5s88mh1QkaLDB4v5psc&security=tls&alpn=h2&encryption=none&insecure=0&host=cd2.serviceali.ir&fp=firefox&type=xhttp&allowInsecure=0&sni=cd2.serviceali.ir#%F0%9F%87%AB%F0%9F%87%AE%20Финляндия%20%7C%20%F0%9F%8C%90%20[🏳️LTE]%20|%20🥭🔧
+vless://ffc46551-cb3f-435c-a97a-b9bab4a1a0d2@63.141.128.237:443?mode=auto&path=%2FeQ7EK5s88mh1QkaLDB4v5psc&security=tls&alpn=h2&encryption=none&insecure=0&host=cd2.serviceali.ir&fp=firefox&type=xhttp&allowInsecure=0&sni=cd2.serviceali.ir#%F0%9F%8C%90%20Anycast-IP%20%7C%20%F0%9F%87%AB%F0%9F%87%AE%20%5B%2ACIDR%5D 🚀 🥭 🔥
+vless://ffc46551-cb3f-435c-a97a-b9bab4a1a0d2@63.141.128.237:443?mode=auto&path=%2FeQ7EK5s88mh1QkaLDB4v5psc&security=tls&alpn=h2&encryption=none&insecure=0&host=cd2.serviceali.ir&type=xhttp&allowInsecure=0&sni=cd2.serviceali.ir#%F0%9F%8C%90%20Anycast-IP%20%7C%20%F0%9F%87%AB%F0%9F%87%AE%20%5B%2ACIDR%5D 🚀 🥭 🔥
+vless://ffc46551-cb3f-435c-a97a-b9bab4a1a0d2@63.141.128.237:443?type=xhttp&security=tls&path=/eQ7EK5s88mh1QkaLDB4v5psc&sni=cd2.serviceali.ir&fp=chrome#%F0%9F%87%AB%F0%9F%87%AE%20Финляндия%20%7C%20%F0%9F%8C%90%20[🏳️LTE]%20|%20🥭🔧
+vless://ffc46551-cb3f-435c-a97a-b9bab4a1a0d2@63.141.128.237:443?type=xhttp&security=tls&path=/eQ7EK5s88mh1QkaLDB4v5psc&sni=cd2.serviceali.ir&fp=chrome#%F0%9F%8C%90%20Anycast-IP%20%7C%20%F0%9F%87%AB%F0%9F%87%AE%20%5B%2ACIDR%5D 🚀 🥭 🔥
+vless://ffc46551-cb3f-435c-a97a-b9bab4a1a0d2@63.141.128.237:443?type=xhttp&security=tls&path=/eQ7EK5s88mh1QkaLDB4v5psc&sni=cd2.serviceali.ir&fp=firefox#%F0%9F%87%AB%F0%9F%87%AE%20Финляндия%20%7C%20%F0%9F%8C%90%20[🏳️LTE]%20|%20🥭🔧
+vless://ffc46551-cb3f-435c-a97a-b9bab4a1a0d2@63.141.128.237:443?type=xhttp&security=tls&path=/eQ7EK5s88mh1QkaLDB4v5psc&sni=cd2.serviceali.ir&fp=firefox#%F0%9F%8C%90%20Anycast-IP%20%7C%20%F0%9F%87%A8%F0%9F%87%A6%20%F0%9F%87%AB%F0%9F%87%AE%20%5B%2ACIDR%5D 🚀 🥭 🔥
