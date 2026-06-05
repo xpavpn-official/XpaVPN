@@ -39,7 +39,14 @@ jobs:
             echo "# profile-update-interval: 1"
             echo "# profile-web-page-url: https://t.me/XpaVPN"
             echo "# support-url: https://t.me/XpaneR"
-            echo "# subscription-userinfo: upload=0;download=51539607552;total=0;expire=253370764800"
+            echo "# subscription-userinfo: upload=0;download=51539607552;total=0;expire=252460800000"
+            
+            # Добавление 4 инфо-серверов в самое начало списка
+            echo "vless://00000000-0000-0000-0000-000000000000@127.0.0.1:443?encryption=none&security=reality&type=tcp#Наш ТГК @XpaVPN"
+            echo "vless://00000000-0000-0000-0000-000000000000@127.0.0.1:443?encryption=none&security=reality&type=tcp#Подписка навсегда"
+            echo "vless://00000000-0000-0000-0000-000000000000@127.0.0.1:443?encryption=none&security=reality&type=tcp#Окончание 01.01.9999 в 00:00"
+            echo "vless://00000000-0000-0000-0000-000000000000@127.0.0.1:443?encryption=none&security=reality&type=tcp#----------------"
+            
             cat final_list.txt
           } > index.html
           
