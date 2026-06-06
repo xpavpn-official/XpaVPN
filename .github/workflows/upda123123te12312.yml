@@ -20,7 +20,8 @@ jobs:
         run: |
           URLS=(
             "https://raw.githubusercontent.com/igareck/vpn-configs-for-russia/main/Vless-Reality-White-Lists-Rus-Mobile.txt"
-            "https://raw.githubusercontent.com/BLACK_VLESS_RUS.txt"
+            "https://raw.githubusercontent.com/igareck/vpn-configs-for-russia/main/WHITE-CIDR-RU-all.txt"
+            "https://raw.githubusercontent.com/igareck/vpn-configs-for-russia/main/BLACK_VLESS_RUS.txt"
             "https://raw.githubusercontent.com/Maskkost93/kizyak-vpn-4.0/refs/heads/main/kizyakbeta7.txt"
             "https://raw.githubusercontent.com/Maskkost93/kizyak-vpn-4.0/refs/heads/main/kizyaktestru.txt"
           )
@@ -28,10 +29,74 @@ jobs:
           > raw.txt
           for url in "${URLS[@]}"; do
             curl -s "$url" >> raw.txt
+            echo "" >> raw.txt
           done
           
-          grep -E 'vless://|trojan://' raw.txt | sort -u | head -n 120 > filtered.txt
-          sed -E '/(🚀|🔥|🥭)/!s/$/ 🚀 🥭 🔥/' filtered.txt > final_list.txt
+          get_country() {
+            local host="$1"
+            host=$(echo "$host" | cut -d':' -f1)
+            
+            case "$host" in
+              *".ru"*|*"ru-"*|*-ru*|*"moscow"*|*"russia"*) echo "🇷🇺 Russia" ;;
+              *".de"*|*"-de"*|*"frankfurt"*|*"germany"*) echo "🇩🇪 Germany" ;;
+              *".fr"*|*"-fr"*|*"paris"*|*"france"*) echo "🇫🇷 France" ;;
+              *".nl"*|*"-nl"*|*"amsterdam"*|*"netherlands"*) echo "🇳🇱 Netherlands" ;;
+              *".uk"*|*".gb"*|*"-uk"*|*"london"*|*"united kingdom"*) echo "🇬🇧 UK" ;;
+              *".us"*|*"-us"*|*"newyork"*|*"unitedstates"*) echo "🇺🇸 USA" ;;
+              *".jp"*|*"-jp"*|*"tokyo"*|*"japan"*) echo "🇯🇵 Japan" ;;
+              *".sg"*|*"-sg"*|*"singapore"*) echo "🇸🇬 Singapore" ;;
+              *".ca"*|*"-ca"*|*"canada"*) echo "🇨🇦 Canada" ;;
+              *".au"*|*"-au"*|*"australia"*) echo "🇦🇺 Australia" ;;
+              *"iran"*|*"tehran"*|*".ir"*) echo "🇮🇷 Iran" ;;
+              *"turkey"*|*"istanbul"*|*".tr"*) echo "🇹🇷 Turkey" ;;
+              *) echo "🌐 Unknown" ;;
+            esac
+          }
+          
+          get_keywords() {
+            local config="$1"
+            local keywords=""
+            if echo "$config" | grep -qi "youtube\|yt\|video"; then
+              keywords="${keywords}YT "
+            fi
+            if echo "$config" | grep -qi "ai\|chatgpt\|gpt\|openai"; then
+              keywords="${keywords}AI "
+            fi
+            if echo "$config" | grep -qi "game\|gaming\|steam\|pubg\|roblox"; then
+              keywords="${keywords}GAME "
+            fi
+            if echo "$config" | grep -qi "stream\|netflix\|disney\|hbo"; then
+              keywords="${keywords}STREAM "
+            fi
+            echo "$keywords" | xargs
+          }
+          
+          grep -E 'vless://|trojan://' raw.txt | sort -u > unique.txt
+          
+          > final_list.txt
+          COUNTER=1
+          
+          while IFS= read -r line; do
+            [ -z "$line" ] && continue
+            
+            NUM=$(printf "%04d" $COUNTER)
+            HOST=$(echo "$line" | sed -E 's/.*@([^:?]+).*/\1/')
+            COUNTRY_FLAG=$(get_country "$HOST")
+            KEYWORDS=$(get_keywords "$line")
+            
+            if [[ "$line" == *"#"* ]]; then
+              BASE_LINE=$(echo "$line" | sed -E 's/#.*$//')
+              NEW_NAME="$NUM | $COUNTRY_FLAG | XpaVPN"
+              [ -n "$KEYWORDS" ] && NEW_NAME="$NUM | $KEYWORDS | $COUNTRY_FLAG | XpaVPN"
+              echo "${BASE_LINE}#${NEW_NAME}" >> final_list.txt
+            else
+              NEW_NAME="$NUM | $COUNTRY_FLAG | XpaVPN"
+              [ -n "$KEYWORDS" ] && NEW_NAME="$NUM | $KEYWORDS | $COUNTRY_FLAG | XpaVPN"
+              echo "${line}#${NEW_NAME}" >> final_list.txt
+            fi
+            
+            COUNTER=$((COUNTER + 1))
+          done < unique.txt
           
           {
             echo "# profile-title: XpaVPN | ELITE"
@@ -41,23 +106,23 @@ jobs:
             echo "# support-url: https://t.me/XpaneR"
             echo "# subscription-userinfo: upload=0;download=51539607552;total=0;expire=252460800000"
             
-            # Добавление 4 инфо-серверов в самое начало списка
             echo "vless://00000000-0000-0000-0000-000000000000@127.0.0.1:443?encryption=none&security=reality&type=tcp#Наш ТГК @XpaVPN"
             echo "vless://00000000-0000-0000-0000-000000000000@127.0.0.1:443?encryption=none&security=reality&type=tcp#Подписка навсегда"
-            echo "vless://00000000-0000-0000-0000-000000000000@127.0.0.1:443?encryption=none&security=reality&type=tcp#Окончание 01.01.9999 в 00:00"
+            echo "vless://00000000-0000-0000-0000-000000000000@127.0.0.1:443?encryption=none&security=reality&type=tcp#Окончание 01.01.9999"
             echo "vless://00000000-0000-0000-0000-000000000000@127.0.0.1:443?encryption=none&security=reality&type=tcp#----------------"
             
             cat final_list.txt
           } > index.html
           
-          # Автоматическое создание файла CNAME с новым свободным поддоменом
           echo "vpn.xpavpns.indevs.in" > CNAME
+          
+          base64 -w 0 index.html > subscription_b64.txt
           
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           
-          git add index.html CNAME
-          git commit -m "Update subscription and CNAME $(date +'%Y-%m-%d %H:%M')" || true
+          git add index.html CNAME subscription_b64.txt
+          git commit -m "🔄 XpaVPN обновление $(date -u '+%Y-%m-%d %H:%M UTC') | Конфигов: $((COUNTER-1))" || true
           git push origin main
           
-          rm raw.txt filtered.txt final_list.txt
+          rm -f raw.txt unique.txt final_list.txt
