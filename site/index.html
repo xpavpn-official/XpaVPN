@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>XpaVPN — Регистрация</title>
+    <title>XpaVPN — Получить ссылку</title>
     <style>
         * {
             margin: 0;
@@ -191,6 +191,22 @@
         @keyframes spin {
             to { transform: rotate(360deg); }
         }
+
+        .warning {
+            background: rgba(245, 158, 11, 0.2);
+            border: 1px solid rgba(245, 158, 11, 0.5);
+            border-radius: 12px;
+            padding: 12px;
+            margin-bottom: 20px;
+            text-align: center;
+            font-size: 13px;
+            color: #fbbf24;
+        }
+
+        .warning a {
+            color: #fcd34d;
+            text-decoration: underline;
+        }
     </style>
 </head>
 <body>
@@ -198,6 +214,12 @@
         <div class="card">
             <h1>🔐 XpaVPN</h1>
             <div class="subtitle">Получите персональную ссылку для подключения</div>
+
+            <div class="warning">
+                ⚠️ ВАЖНО! Подписка доступна ТОЛЬКО по адресу:<br>
+                <strong>https://vpn.pane1.nx.kg/</strong><br>
+                Другие адреса (raw.githubusercontent.com) не работают!
+            </div>
 
             <div class="input-group">
                 <label>📱 Telegram username</label>
@@ -214,7 +236,7 @@
                 <input type="text" id="answer" placeholder="Введите число" autocomplete="off">
             </div>
 
-            <button id="submitBtn" onclick="registerAndGetLink()">✨ Получить ссылку</button>
+            <button id="submitBtn" onclick="getLink()">✨ Получить ссылку</button>
 
             <div id="result" class="result"></div>
             <div class="footer">
@@ -225,9 +247,8 @@
 
     <script>
         const BASE_URL = 'https://vpn.pane1.nx.kg';
-        const GITHUB_TOKEN = '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';
         
-        async function registerAndGetLink() {
+        function getLink() {
             const username = document.getElementById('username').value.trim();
             const answer = document.getElementById('answer').value.trim();
             const resultDiv = document.getElementById('result');
@@ -251,112 +272,46 @@
                 return;
             }
             
-            btn.innerHTML = '<div class="loading"></div> Регистрация...';
+            btn.innerHTML = '<div class="loading"></div> Поиск...';
             btn.disabled = true;
-            resultDiv.className = 'result info';
-            resultDiv.innerHTML = '📝 Проверяем и регистрируем...';
             
-            try {
-                const checkResponse = await fetch('https://raw.githubusercontent.com/xpavpn-official/XpaVPN/main/users.json');
-                let users = {};
-                
-                if (checkResponse.ok) {
-                    users = await checkResponse.json();
-                }
-                
-                if (users[username]) {
-                    const token = users[username].token;
-                    const url = `${BASE_URL}/users/${token}.html`;
-                    resultDiv.className = 'result success';
-                    resultDiv.innerHTML = `
-                        ✅ Вы уже зарегистрированы!<br><br>
-                        📋 Ваша персональная ссылка:<br>
-                        <code>${url}</code><br><br>
-                        Вставьте эту ссылку в ваш VPN-клиент.
-                    `;
+            fetch('https://raw.githubusercontent.com/xpavpn-official/XpaVPN/main/users.json')
+                .then(response => {
+                    if (!response.ok) throw new Error('Network error');
+                    return response.json();
+                })
+                .then(users => {
+                    if (users[username]) {
+                        const token = users[username].token;
+                        const url = `${BASE_URL}/users/${token}.html`;
+                        resultDiv.className = 'result success';
+                        resultDiv.innerHTML = `
+                            ✅ Доступ предоставлен!<br><br>
+                            📋 Ваша персональная ссылка:<br>
+                            <code>${url}</code><br><br>
+                            ⚠️ Вставляйте ссылку ТОЛЬКО в формате:<br>
+                            <strong>https://vpn.pane1.nx.kg/...</strong>
+                        `;
+                    } else {
+                        resultDiv.className = 'result error';
+                        resultDiv.innerHTML = '❌ Пользователь не найден. Напишите @XpaneR для регистрации.';
+                    }
+                })
+                .catch(error => {
+                    resultDiv.className = 'result error';
+                    resultDiv.innerHTML = '❌ Ошибка загрузки. Попробуйте позже.';
+                })
+                .finally(() => {
                     btn.innerHTML = '✨ Получить ссылку';
                     btn.disabled = false;
-                    return;
-                }
-                
-                const token = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 8);
-                const newUser = {
-                    [username]: {
-                        token: token,
-                        created: new Date().toISOString(),
-                        type: "free"
-                    }
-                };
-                
-                const mergedUsers = { ...users, ...newUser };
-                const updatedContent = btoa(unescape(encodeURIComponent(JSON.stringify(mergedUsers, null, 2))));
-                
-                const shaResponse = await fetch('https://api.github.com/repos/xpavpn-official/XpaVPN/contents/users.json', {
-                    headers: {
-                        'Authorization': `token ${GITHUB_TOKEN}`
-                    }
                 });
-                
-                let sha = null;
-                if (shaResponse.ok) {
-                    const shaData = await shaResponse.json();
-                    sha = shaData.sha;
-                }
-                
-                const updateResponse = await fetch('https://api.github.com/repos/xpavpn-official/XpaVPN/contents/users.json', {
-                    method: 'PUT',
-                    headers: {
-                        'Authorization': `token ${GITHUB_TOKEN}`,
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        message: `Add new user: ${username}`,
-                        content: updatedContent,
-                        sha: sha
-                    })
-                });
-                
-                if (updateResponse.ok) {
-                    await fetch('https://api.github.com/repos/xpavpn-official/XpaVPN/dispatches', {
-                        method: 'POST',
-                        headers: {
-                            'Authorization': `token ${GITHUB_TOKEN}`,
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({
-                            event_type: 'new-user-registered'
-                        })
-                    });
-                    
-                    const url = `${BASE_URL}/users/${token}.html`;
-                    resultDiv.className = 'result success';
-                    resultDiv.innerHTML = `
-                        ✅ Регистрация успешна!<br>
-                        <strong>🆓 FREE подписка</strong><br><br>
-                        📋 Ваша персональная ссылка:<br>
-                        <code>${url}</code><br><br>
-                        Вставьте эту ссылку в ваш VPN-клиент.<br>
-                        Ссылка будет активна через 1-2 минуты.
-                    `;
-                } else {
-                    throw new Error('Failed to save user');
-                }
-                
-            } catch (error) {
-                resultDiv.className = 'result error';
-                resultDiv.innerHTML = '❌ Ошибка регистрации. Попробуйте позже или напишите @XpaneR';
-                console.error(error);
-            } finally {
-                btn.innerHTML = '✨ Получить ссылку';
-                btn.disabled = false;
-            }
         }
         
         document.getElementById('username').addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') registerAndGetLink();
+            if (e.key === 'Enter') getLink();
         });
         document.getElementById('answer').addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') registerAndGetLink();
+            if (e.key === 'Enter') getLink();
         });
     </script>
 </body>
