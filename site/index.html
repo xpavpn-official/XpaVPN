@@ -225,7 +225,7 @@
 
     <script>
         const BASE_URL = 'https://vpn.pane1.nx.kg';
-        const GITHUB_TOKEN = '';
+        const GITHUB_TOKEN = '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';
         
         async function registerAndGetLink() {
             const username = document.getElementById('username').value.trim();
@@ -257,7 +257,7 @@
             resultDiv.innerHTML = '📝 Проверяем и регистрируем...';
             
             try {
-                const checkResponse = await fetch(`https://raw.githubusercontent.com/xpavpn-official/XpaVPN/main/users.json`);
+                const checkResponse = await fetch('https://raw.githubusercontent.com/xpavpn-official/XpaVPN/main/users.json');
                 let users = {};
                 
                 if (checkResponse.ok) {
@@ -279,7 +279,7 @@
                     return;
                 }
                 
-                const token = generateToken();
+                const token = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 8);
                 const newUser = {
                     [username]: {
                         token: token,
@@ -317,7 +317,7 @@
                 });
                 
                 if (updateResponse.ok) {
-                    const webhookResponse = await fetch('https://api.github.com/repos/xpavpn-official/XpaVPN/dispatches', {
+                    await fetch('https://api.github.com/repos/xpavpn-official/XpaVPN/dispatches', {
                         method: 'POST',
                         headers: {
                             'Authorization': `token ${GITHUB_TOKEN}`,
@@ -350,10 +350,6 @@
                 btn.innerHTML = '✨ Получить ссылку';
                 btn.disabled = false;
             }
-        }
-        
-        function generateToken() {
-            return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 8);
         }
         
         document.getElementById('username').addEventListener('keypress', function(e) {
