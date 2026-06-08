@@ -112,10 +112,12 @@ jobs:
           
           CURRENT_DATETIME=$(date -u '+%Y-%m-%d %H:%M UTC')
           CURRENT_FULL=$(date -u '+%d.%m.%Y %H:%M:%S')
+          CURRENT_ANNOUNCE=$(date -u '+%H:%M:%S UTC')
           NEXT_HOUR=$(date -u -d '+1 hour' '+%d.%m.%Y %H:00:00')
+          NEXT_ANNOUNCE=$(date -u -d '+1 hour' '+%H:%M UTC')
           
           printf '# profile-title: XpaVPN | ELITE\n' > index.html
-          printf '# announce: Поддержка: @XpaneR | Проект закрытого типа.\n' >> index.html
+          printf '# announce: Обновление: %s | Следующее: %s | Поддержка: @XpaneR | Проект закрытого типа.\n' "$CURRENT_ANNOUNCE" "$NEXT_ANNOUNCE" >> index.html
           printf '# profile-update-interval: 1\n' >> index.html
           printf '# profile-web-page-url: https://t.me/XpaVPN\n' >> index.html
           printf '# support-url: https://t.me/XpaneR\n' >> index.html
@@ -126,7 +128,6 @@ jobs:
           printf '\n' >> index.html
           printf 'vless://00000000-0000-0000-0000-000000000000@127.0.0.1:443?encryption=none&security=reality&type=tcp#Наш ТГК @XpaVPN\n' >> index.html
           printf 'vless://00000000-0000-0000-0000-000000000000@127.0.0.1:443?encryption=none&security=reality&type=tcp#Подписка навсегда\n' >> index.html
-          printf 'vless://00000000-0000-0000-0000-000000000000@127.0.0.1:443?encryption=none&security=reality&type=tcp#Окончание 01.01.9999\n' >> index.html
           printf 'vless://00000000-0000-0000-0000-000000000000@127.0.0.1:443?encryption=none&security=reality&type=tcp#----------------\n' >> index.html
           
           cat final_list.txt >> index.html
@@ -135,7 +136,7 @@ jobs:
           base64 -w 0 index.html > subscription_b64.txt
           
           git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git config.user.email "github-actions[bot]@users.noreply.github.com"
           
           git add index.html CNAME subscription_b64.txt
           git commit -m "🔄 XpaVPN обновление $CURRENT_DATETIME | Конфигов: $CONFIGS_COUNT" || true
