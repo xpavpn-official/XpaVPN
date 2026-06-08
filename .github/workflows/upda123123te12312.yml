@@ -37,19 +37,19 @@ jobs:
             local host="$1"
             host=$(echo "$host" | cut -d':' -f1)
             case "$host" in
-              *".ru"*|*"ru-"*|*-ru*|*"moscow"*|*"russia"*) echo "🇷🇺" ;;
-              *".de"*|*"-de"*|*"frankfurt"*|*"germany"*) echo "🇩🇪" ;;
-              *".fr"*|*"-fr"*|*"paris"*|*"france"*) echo "🇫🇷" ;;
-              *".nl"*|*"-nl"*|*"amsterdam"*|*"netherlands"*) echo "🇳🇱" ;;
-              *".uk"*|*".gb"*|*"-uk"*|*"london"*|*"united kingdom"*) echo "🇬🇧" ;;
-              *".us"*|*"-us"*|*"newyork"*|*"unitedstates"*) echo "🇺🇸" ;;
-              *".jp"*|*"-jp"*|*"tokyo"*|*"japan"*) echo "🇯🇵" ;;
-              *".sg"*|*"-sg"*|*"singapore"*) echo "🇸🇬" ;;
-              *".ca"*|*"-ca"*|*"canada"*) echo "🇨🇦" ;;
-              *".au"*|*"-au"*|*"australia"*) echo "🇦🇺" ;;
-              *"iran"*|*"tehran"*|*".ir"*) echo "🇮🇷" ;;
-              *"turkey"*|*"istanbul"*|*".tr"*) echo "🇹🇷" ;;
-              *) echo "🌐" ;;
+              *".ru"*|*"ru-"*|*-ru*|*"moscow"*|*"russia"*) echo "🇷🇺 Russia" ;;
+              *".de"*|*"-de"*|*"frankfurt"*|*"germany"*) echo "🇩🇪 Germany" ;;
+              *".fr"*|*"-fr"*|*"paris"*|*"france"*) echo "🇫🇷 France" ;;
+              *".nl"*|*"-nl"*|*"amsterdam"*|*"netherlands"*) echo "🇳🇱 Netherlands" ;;
+              *".uk"*|*".gb"*|*"-uk"*|*"london"*|*"united kingdom"*) echo "🇬🇧 UK" ;;
+              *".us"*|*"-us"*|*"newyork"*|*"unitedstates"*) echo "🇺🇸 USA" ;;
+              *".jp"*|*"-jp"*|*"tokyo"*|*"japan"*) echo "🇯🇵 Japan" ;;
+              *".sg"*|*"-sg"*|*"singapore"*) echo "🇸🇬 Singapore" ;;
+              *".ca"*|*"-ca"*|*"canada"*) echo "🇨🇦 Canada" ;;
+              *".au"*|*"-au"*|*"australia"*) echo "🇦🇺 Australia" ;;
+              *"iran"*|*"tehran"*|*".ir"*) echo "🇮🇷 Iran" ;;
+              *"turkey"*|*"istanbul"*|*".tr"*) echo "🇹🇷 Turkey" ;;
+              *) echo "🌍 Unknown" ;;
             esac
           }
           
@@ -126,10 +126,10 @@ jobs:
             "https://raw.githubusercontent.com/Maskkost93/kizyak-vpn-4.0/refs/heads/main/kizyaktestru.txt"
           )
           
+          > raw.txt
           echo "# TEST: VPNGate source (test mode)" >> raw.txt
           curl -s --max-time 10 "https://www.vpngate.net/api/iphone/" | grep -E 'vless://|trojan://' >> raw.txt 2>/dev/null || echo "# VPNGate: unavailable" >> raw.txt
           
-          > raw.txt
           for url in "${URLS[@]}"; do
             curl -s --fail "$url" >> raw.txt || echo "# Failed: $url" >> raw.txt
             echo "" >> raw.txt
@@ -211,7 +211,7 @@ jobs:
             QUALITY_TAG=$(get_quality_tag "$line")
             KEYWORDS=$(get_keywords "$line")
             
-            if [ "$COUNTRY_FLAG" = "🇷🇺" ]; then
+            if [ "$COUNTRY_FLAG" = "🇷🇺 Russia" ]; then
               MARKER="[RUS]"
             else
               MARKER=""
@@ -234,7 +234,7 @@ jobs:
               FINAL_LINE="${line}#${NEW_NAME}"
             fi
             
-            if [ "$COUNTRY_FLAG" = "🇷🇺" ]; then
+            if [ "$COUNTRY_FLAG" = "🇷🇺 Russia" ]; then
               echo "$FINAL_LINE" >> russia_list.txt
             else
               echo "$FINAL_LINE" >> other_list.txt
@@ -283,8 +283,10 @@ jobs:
           printf '# servers-count: %s\n' "$CONFIGS_COUNT" >> index.html
           printf '# change: %s\n' "$DIFF_TEXT" >> index.html
           printf '\n' >> index.html
-          printf 'vless://00000000-0000-0000-0000-000000000000@127.0.0.1:443?encryption=none&security=reality&type=tcp#Our TG @XpaVPN\n' >> index.html
-          printf 'vless://00000000-0000-0000-0000-000000000000@127.0.0.1:443?encryption=none&security=reality&type=tcp#Forever subscription\n' >> index.html
+          
+          printf 'vless://00000000-0000-0000-0000-000000000001@127.0.0.1:443?encryption=none&security=reality&type=tcp#Наш ТГК @XpaVPN\n' >> index.html
+          printf 'vless://00000000-0000-0000-0000-000000000002@127.0.0.1:443?encryption=none&security=reality&type=tcp#Подписка навсегда\n' >> index.html
+          printf 'vless://00000000-0000-0000-0000-000000000003@127.0.0.1:443?encryption=none&security=reality&type=tcp#Пожертвования - @XpaneR\n' >> index.html
           printf 'vless://00000000-0000-0000-0000-000000000000@127.0.0.1:443?encryption=none&security=reality&type=tcp#----------------\n' >> index.html
           
           cat final_list.txt >> index.html
