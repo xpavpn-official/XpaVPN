@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+<head><title>XpaVPN - получить ссылку</title></head>
+<body>
+  <h1>🔐 XpaVPN</h1>
+  <p>Ваш Telegram username: <input id="user" placeholder="@ivan_petrov"></p>
+  <p>Сколько будет 5 + 3? <input id="answer" placeholder="8"></p>
+  <button onclick="getLink()">Получить ссылку</button>
+  <p id="result"></p>
+
+  <script>
+    async function getLink() {
+      let user = document.getElementById('user').value;
+      let answer = document.getElementById('answer').value;
+      
+      if (answer !== '8') {
+        document.getElementById('result').innerHTML = '❌ Неправильный ответ!';
+        return;
+      }
+      
+      let res = await fetch('https://raw.githubusercontent.com/xpavpn-official/XpaVPN/main/users.json');
+      let data = await res.json();
+      
+      if (data[user]) {
+        let url = `https://vpn.xpavpns.indevs.in/users/${data[user].token}.html`;
+        document.getElementById('result').innerHTML = `✅ Ваша ссылка:<br><code>${url}</code>`;
+      } else {
+        document.getElementById('result').innerHTML = '❌ Напишите @XpaVPN_bot /start';
+      }
+    }
+  </script>
+</body>
+</html>
