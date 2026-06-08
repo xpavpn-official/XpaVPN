@@ -114,22 +114,20 @@ jobs:
           CURRENT_FULL=$(date -u '+%d.%m.%Y %H:%M:%S')
           NEXT_HOUR=$(date -u -d '+1 hour' '+%d.%m.%Y %H:00:00')
           
-          cat > index.html << EOF
-# profile-title: XpaVPN | ELITE
-# announce: Поддержка: @XpaneR | Проект закрытого типа.
-# profile-update-interval: 1
-# profile-web-page-url: https://t.me/XpaVPN
-# support-url: https://t.me/XpaneR
-# subscription-userinfo: upload=0;download=51539607552;total=0;expire=252460800000
-# last-update: $CURRENT_FULL
-# next-update: $NEXT_HOUR
-# servers-count: $CONFIGS_COUNT
-
-vless://00000000-0000-0000-0000-000000000000@127.0.0.1:443?encryption=none&security=reality&type=tcp#Наш ТГК @XpaVPN
-vless://00000000-0000-0000-0000-000000000000@127.0.0.1:443?encryption=none&security=reality&type=tcp#Подписка навсегда
-vless://00000000-0000-0000-0000-000000000000@127.0.0.1:443?encryption=none&security=reality&type=tcp#Окончание 01.01.9999
-vless://00000000-0000-0000-0000-000000000000@127.0.0.1:443?encryption=none&security=reality&type=tcp#----------------
-EOF
+          printf '# profile-title: XpaVPN | ELITE\n' > index.html
+          printf '# announce: Поддержка: @XpaneR | Проект закрытого типа.\n' >> index.html
+          printf '# profile-update-interval: 1\n' >> index.html
+          printf '# profile-web-page-url: https://t.me/XpaVPN\n' >> index.html
+          printf '# support-url: https://t.me/XpaneR\n' >> index.html
+          printf '# subscription-userinfo: upload=0;download=51539607552;total=0;expire=252460800000\n' >> index.html
+          printf '# last-update: %s\n' "$CURRENT_FULL" >> index.html
+          printf '# next-update: %s\n' "$NEXT_HOUR" >> index.html
+          printf '# servers-count: %s\n' "$CONFIGS_COUNT" >> index.html
+          printf '\n' >> index.html
+          printf 'vless://00000000-0000-0000-0000-000000000000@127.0.0.1:443?encryption=none&security=reality&type=tcp#Наш ТГК @XpaVPN\n' >> index.html
+          printf 'vless://00000000-0000-0000-0000-000000000000@127.0.0.1:443?encryption=none&security=reality&type=tcp#Подписка навсегда\n' >> index.html
+          printf 'vless://00000000-0000-0000-0000-000000000000@127.0.0.1:443?encryption=none&security=reality&type=tcp#Окончание 01.01.9999\n' >> index.html
+          printf 'vless://00000000-0000-0000-0000-000000000000@127.0.0.1:443?encryption=none&security=reality&type=tcp#----------------\n' >> index.html
           
           cat final_list.txt >> index.html
           
