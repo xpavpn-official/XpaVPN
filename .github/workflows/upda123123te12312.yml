@@ -297,10 +297,44 @@ jobs:
           
           echo "vpn.xpavpns.indevs.in" > CNAME
           
+          # Generate individual subscriptions for users
+          if [ -f users.json ]; then
+            mkdir -p users
+            # Check if jq is available, if not install it
+            if ! command -v jq &> /dev/null; then
+              sudo apt-get update && sudo apt-get install -y jq
+            fi
+            cat users.json | jq -r 'to_entries[] | "\(.key)|\(.value.token)"' 2>/dev/null | while IFS='|' read -r username token; do
+              if [ -n "$username" ] && [ -n "$token" ]; then
+                # Limit to 50 servers for free users
+                head -n 50 final_list.txt > "users/${token}.txt"
+                
+                printf '# profile-title: XpaVPN | ELITE\n' > "users/${token}.html"
+                printf '# announce: Personal subscription for %s | Support: @XpaneR\n' "$username" >> "users/${token}.html"
+                printf '# profile-update-interval: 1\n' >> "users/${token}.html"
+                printf '# profile-web-page-url: https://t.me/XpaVPN\n' >> "users/${token}.html"
+                printf '# support-url: https://t.me/XpaneR\n' >> "users/${token}.html"
+                printf '# subscription-userinfo: upload=0;download=51539607552;total=0;expire=252460800000\n' >> "users/${token}.html"
+                printf '# last-update: %s\n' "$CURRENT_FULL" >> "users/${token}.html"
+                printf '# next-update: %s\n' "$NEXT_HOUR" >> "users/${token}.html"
+                printf '# servers-count: 50\n' >> "users/${token}.html"
+                printf '\n' >> "users/${token}.html"
+                
+                printf 'vless://00000000-0000-0000-0000-000000000001@127.0.0.1:443?encryption=none&security=reality&type=tcp#Наш ТГК @XpaVPN\n' >> "users/${token}.html"
+                printf 'vless://00000000-0000-0000-0000-000000000002@127.0.0.1:443?encryption=none&security=reality&type=tcp#Подписка навсегда\n' >> "users/${token}.html"
+                printf 'vless://00000000-0000-0000-0000-000000000003@127.0.0.1:443?encryption=none&security=reality&type=tcp#Пожертвования - @XpaneR\n' >> "users/${token}.html"
+                printf 'vless://00000000-0000-0000-0000-000000000000@127.0.0.1:443?encryption=none&security=reality&type=tcp#----------------\n' >> "users/${token}.html"
+                
+                cat "users/${token}.txt" >> "users/${token}.html"
+                rm -f "users/${token}.txt"
+              fi
+            done
+          fi
+          
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           
-          git add index.html CNAME subscription_b64.txt subscription_encrypted.txt configs_count.txt
+          git add index.html CNAME subscription_b64.txt subscription_encrypted.txt configs_count.txt users/ users.json
           git commit -m "🔄 XpaVPN update $CURRENT_DATETIME | Configs: $CONFIGS_COUNT ($DIFF_TEXT)" || true
           
           git push origin main
