@@ -461,9 +461,9 @@ jobs:
           cat final_list.txt >> index.html
           
           # ============================================
-          # GENERATE STATS.HTML
+          # GENERATE STATS.HTML (FIXED)
           # ============================================
-          cat > stats.html << EOF
+          cat > stats.html << 'EOF'
 <!DOCTYPE html>
 <html>
 <head>
@@ -479,16 +479,28 @@ jobs:
 </head>
 <body>
     <h1>🔐 XpaVPN Statistics</h1>
-    <div class="stat">📊 Total configs: <span class="good">$CONFIGS_COUNT</span></div>
-    <div class="stat">🔄 Last update: <span class="good">$CURRENT_DATETIME</span></div>
-    <div class="stat">📈 Change: <span class="good">$DIFF_TEXT</span></div>
-    <div class="stat">🌍 Countries: <span class="good">$(grep -oE '🇷🇺|🇩🇪|🇫🇷|🇳🇱|🇬🇧|🇺🇸' final_list.txt 2>/dev/null | sort | uniq -c | wc -l)</span></div>
+    <div class="stat">📊 Total configs: <span class="good">CONFIGS_COUNT_PLACEHOLDER</span></div>
+    <div class="stat">🔄 Last update: <span class="good">CURRENT_DATETIME_PLACEHOLDER</span></div>
+    <div class="stat">📈 Change: <span class="good">DIFF_TEXT_PLACEHOLDER</span></div>
+    <div class="stat">🌍 Countries: <span class="good">COUNTRIES_COUNT_PLACEHOLDER</span></div>
     <hr>
     <h2>📋 Active Sources</h2>
-    <pre>$(for url in "${URLS[@]}"; do echo "$url"; done)</pre>
+    <pre>SOURCES_LIST_PLACEHOLDER</pre>
 </body>
 </html>
 EOF
+          
+          COUNTRIES_COUNT=$(grep -oE '🇷🇺|🇩🇪|🇫🇷|🇳🇱|🇬🇧|🇺🇸' final_list.txt 2>/dev/null | sort | uniq -c | wc -l)
+          SOURCES_LIST=""
+          for url in "${URLS[@]}"; do
+            SOURCES_LIST="${SOURCES_LIST}${url}\n"
+          done
+          
+          sed -i "s/CONFIGS_COUNT_PLACEHOLDER/$CONFIGS_COUNT/g" stats.html
+          sed -i "s/CURRENT_DATETIME_PLACEHOLDER/$CURRENT_DATETIME/g" stats.html
+          sed -i "s/DIFF_TEXT_PLACEHOLDER/$DIFF_TEXT/g" stats.html
+          sed -i "s/COUNTRIES_COUNT_PLACEHOLDER/$COUNTRIES_COUNT/g" stats.html
+          sed -i "s/SOURCES_LIST_PLACEHOLDER/$(echo -e "$SOURCES_LIST")/g" stats.html
           
           base64 -w 0 index.html > subscription_b64.txt
           cat index.html | base64 -w 0 | rev > subscription_encrypted.txt
