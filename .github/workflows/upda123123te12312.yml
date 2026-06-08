@@ -4,6 +4,15 @@ on:
   schedule:
     - cron: '0 * * * *'
   workflow_dispatch:
+    inputs:
+      country_filter:
+        description: 'Filter by country (ru/de/us/all)'
+        required: false
+        default: 'all'
+      top_servers:
+        description: 'Top servers by stability (0=off, 20=top20)'
+        required: false
+        default: '0'
 
 permissions:
   contents: write
@@ -18,6 +27,97 @@ jobs:
 
       - name: Build and Push
         run: |
+          check_port() {
+            local host="$1"
+            local port="$2"
+            timeout 2 bash -c "echo >/dev/tcp/$host/$port" 2>/dev/null && return 0 || return 1
+          }
+          
+          get_country() {
+            local host="$1"
+            host=$(echo "$host" | cut -d':' -f1)
+            case "$host" in
+              *".ru"*|*"ru-"*|*-ru*|*"moscow"*|*"russia"*) echo "🇷🇺" ;;
+              *".de"*|*"-de"*|*"frankfurt"*|*"germany"*) echo "🇩🇪" ;;
+              *".fr"*|*"-fr"*|*"paris"*|*"france"*) echo "🇫🇷" ;;
+              *".nl"*|*"-nl"*|*"amsterdam"*|*"netherlands"*) echo "🇳🇱" ;;
+              *".uk"*|*".gb"*|*"-uk"*|*"london"*|*"united kingdom"*) echo "🇬🇧" ;;
+              *".us"*|*"-us"*|*"newyork"*|*"unitedstates"*) echo "🇺🇸" ;;
+              *".jp"*|*"-jp"*|*"tokyo"*|*"japan"*) echo "🇯🇵" ;;
+              *".sg"*|*"-sg"*|*"singapore"*) echo "🇸🇬" ;;
+              *".ca"*|*"-ca"*|*"canada"*) echo "🇨🇦" ;;
+              *".au"*|*"-au"*|*"australia"*) echo "🇦🇺" ;;
+              *"iran"*|*"tehran"*|*".ir"*) echo "🇮🇷" ;;
+              *"turkey"*|*"istanbul"*|*".tr"*) echo "🇹🇷" ;;
+              *) echo "🌐" ;;
+            esac
+          }
+          
+          get_country_name() {
+            local host="$1"
+            host=$(echo "$host" | cut -d':' -f1)
+            case "$host" in
+              *".ru"*|*"ru-"*|*-ru*|*"moscow"*|*"russia"*) echo "Russia" ;;
+              *".de"*|*"-de"*|*"frankfurt"*|*"germany"*) echo "Germany" ;;
+              *".fr"*|*"-fr"*|*"paris"*|*"france"*) echo "France" ;;
+              *".nl"*|*"-nl"*|*"amsterdam"*|*"netherlands"*) echo "Netherlands" ;;
+              *".uk"*|*".gb"*|*"-uk"*|*"london"*|*"united kingdom"*) echo "UK" ;;
+              *".us"*|*"-us"*|*"newyork"*|*"unitedstates"*) echo "USA" ;;
+              *".jp"*|*"-jp"*|*"tokyo"*|*"japan"*) echo "Japan" ;;
+              *".sg"*|*"-sg"*|*"singapore"*) echo "Singapore" ;;
+              *".ca"*|*"-ca"*|*"canada"*) echo "Canada" ;;
+              *".au"*|*"-au"*|*"australia"*) echo "Australia" ;;
+              *"iran"*|*"tehran"*|*".ir"*) echo "Iran" ;;
+              *"turkey"*|*"istanbul"*|*".tr"*) echo "Turkey" ;;
+              *) echo "Unknown" ;;
+            esac
+          }
+          
+          get_quality_tag() {
+            local config="$1"
+            if echo "$config" | grep -qE '[0-9]{6,}'; then
+              echo "⚡NEW"
+            elif echo "$config" | grep -q "stable\|prod\|main\|working"; then
+              echo "✅STABLE"
+            else
+              echo ""
+            fi
+          }
+          
+          get_keywords() {
+            local config="$1"
+            local keywords=""
+            if echo "$config" | grep -qi "youtube\|yt\|video"; then
+              keywords="${keywords}📺YT "
+            fi
+            if echo "$config" | grep -qi "ai\|chatgpt\|gpt\|openai"; then
+              keywords="${keywords}🤖AI "
+            fi
+            if echo "$config" | grep -qi "game\|gaming\|steam\|pubg\|roblox"; then
+              keywords="${keywords}🎮GAME "
+            fi
+            if echo "$config" | grep -qi "stream\|netflix\|disney\|hbo"; then
+              keywords="${keywords}📡STREAM "
+            fi
+            echo "$keywords" | xargs
+          }
+          
+          is_blacklisted() {
+            local config="$1"
+            if echo "$config" | grep -qi "dead\|expired\|test\|broken\|invalid\|fake\|demo\|sample"; then
+              return 0
+            fi
+            return 1
+          }
+          
+          clean_config() {
+            local config="$1"
+            config=$(echo "$config" | sed 's/[[:space:]]*$//')
+            config=$(echo "$config" | sed 's/^[[:space:]]*//')
+            config=$(echo "$config" | sed 's/|/\\|/g')
+            echo "$config"
+          }
+          
           URLS=(
             "https://raw.githubusercontent.com/igareck/vpn-configs-for-russia/main/Vless-Reality-White-Lists-Rus-Mobile.txt"
             "https://raw.githubusercontent.com/igareck/vpn-configs-for-russia/main/WHITE-CIDR-RU-all.txt"
@@ -26,51 +126,20 @@ jobs:
             "https://raw.githubusercontent.com/Maskkost93/kizyak-vpn-4.0/refs/heads/main/kizyaktestru.txt"
           )
           
+          echo "# TEST: VPNGate source (test mode)" >> raw.txt
+          curl -s --max-time 10 "https://www.vpngate.net/api/iphone/" | grep -E 'vless://|trojan://' >> raw.txt 2>/dev/null || echo "# VPNGate: unavailable" >> raw.txt
+          
           > raw.txt
           for url in "${URLS[@]}"; do
             curl -s --fail "$url" >> raw.txt || echo "# Failed: $url" >> raw.txt
             echo "" >> raw.txt
           done
           
-          get_country() {
-            local host="$1"
-            host=$(echo "$host" | cut -d':' -f1)
-            case "$host" in
-              *".ru"*|*"ru-"*|*-ru*|*"moscow"*|*"russia"*) echo "🇷🇺 Russia" ;;
-              *".de"*|*"-de"*|*"frankfurt"*|*"germany"*) echo "🇩🇪 Germany" ;;
-              *".fr"*|*"-fr"*|*"paris"*|*"france"*) echo "🇫🇷 France" ;;
-              *".nl"*|*"-nl"*|*"amsterdam"*|*"netherlands"*) echo "🇳🇱 Netherlands" ;;
-              *".uk"*|*".gb"*|*"-uk"*|*"london"*|*"united kingdom"*) echo "🇬🇧 UK" ;;
-              *".us"*|*"-us"*|*"newyork"*|*"unitedstates"*) echo "🇺🇸 USA" ;;
-              *".jp"*|*"-jp"*|*"tokyo"*|*"japan"*) echo "🇯🇵 Japan" ;;
-              *".sg"*|*"-sg"*|*"singapore"*) echo "🇸🇬 Singapore" ;;
-              *".ca"*|*"-ca"*|*"canada"*) echo "🇨🇦 Canada" ;;
-              *".au"*|*"-au"*|*"australia"*) echo "🇦🇺 Australia" ;;
-              *"iran"*|*"tehran"*|*".ir"*) echo "🇮🇷 Iran" ;;
-              *"turkey"*|*"istanbul"*|*".tr"*) echo "🇹🇷 Turkey" ;;
-              *) echo "🌐 Unknown" ;;
-            esac
-          }
-          
-          get_keywords() {
-            local config="$1"
-            local keywords=""
-            if echo "$config" | grep -qi "youtube\|yt\|video"; then
-              keywords="${keywords}YT "
-            fi
-            if echo "$config" | grep -qi "ai\|chatgpt\|gpt\|openai"; then
-              keywords="${keywords}AI "
-            fi
-            if echo "$config" | grep -qi "game\|gaming\|steam\|pubg\|roblox"; then
-              keywords="${keywords}GAME "
-            fi
-            if echo "$config" | grep -qi "stream\|netflix\|disney\|hbo"; then
-              keywords="${keywords}STREAM "
-            fi
-            echo "$keywords" | xargs
-          }
-          
           grep -E 'vless://|trojan://' raw.txt | sort -u > temp_unique.txt
+          
+          while IFS= read -r line; do
+            clean_config "$line" >> temp_clean.txt
+          done < temp_unique.txt
           
           awk -F'[@:]' '
             {
@@ -81,34 +150,121 @@ jobs:
               port = c[1]
               key = host ":" port
               if (!seen[key]++) print
-            }' temp_unique.txt > unique.txt
+            }' temp_clean.txt > temp_dedup.txt
+          
+          COUNTRY_FILTER="${COUNTRY_FILTER:-all}"
+          CHECK_ALIVE="${CHECK_ALIVE:-false}"
+          TOP_SERVERS="${top_servers:-0}"
+          
+          > filtered.txt
+          STABILITY_SCORES=""
+          
+          while IFS= read -r line; do
+            if is_blacklisted "$line"; then
+              continue
+            fi
+            
+            HOST=$(echo "$line" | sed -E 's/.*@([^:?]+).*/\1/')
+            COUNTRY_CODE=$(get_country "$HOST")
+            COUNTRY_NAME=$(get_country_name "$HOST")
+            
+            if [ "$COUNTRY_FILTER" != "all" ] && [ "$COUNTRY_CODE" != "$COUNTRY_FILTER" ]; then
+              continue
+            fi
+            
+            if [ "$CHECK_ALIVE" = "true" ]; then
+              PORT=$(echo "$line" | grep -oP ':\K\d+(?=\?)' || echo "443")
+              if ! check_port "$HOST" "$PORT"; then
+                continue
+              fi
+              echo "$COUNTRY_CODE:$HOST:1" >> stability_scores.txt
+            else
+              echo "$COUNTRY_CODE:$HOST:1" >> stability_scores.txt
+            fi
+            
+            echo "$line" >> filtered.txt
+          done < temp_dedup.txt
+          
+          if [ "$TOP_SERVERS" -gt 0 ] && [ -f filtered.txt ]; then
+            awk -F':' '{ sum[$1":"$2] += $3 } END { for (k in sum) print sum[k], k }' stability_scores.txt | sort -rn | head -"$TOP_SERVERS" > top_servers.txt
+            
+            > temp_top.txt
+            while read -r score key; do
+              grep "$(echo "$key" | cut -d':' -f2)" filtered.txt >> temp_top.txt
+            done < top_servers.txt
+            
+            mv temp_top.txt filtered.txt
+          fi
           
           > final_list.txt
           COUNTER=1
           
+          > russia_list.txt
+          > other_list.txt
+          
           while IFS= read -r line; do
             [ -z "$line" ] && continue
             
-            NUM=$(printf "%04d" $COUNTER)
             HOST=$(echo "$line" | sed -E 's/.*@([^:?]+).*/\1/')
             COUNTRY_FLAG=$(get_country "$HOST")
+            COUNTRY_NAME=$(get_country_name "$HOST")
+            QUALITY_TAG=$(get_quality_tag "$line")
             KEYWORDS=$(get_keywords "$line")
+            
+            if [ "$COUNTRY_FLAG" = "🇷🇺" ]; then
+              MARKER="[RUS]"
+            else
+              MARKER=""
+            fi
+            
+            NAME_PARTS=()
+            [ -n "$QUALITY_TAG" ] && NAME_PARTS+=("$QUALITY_TAG")
+            [ -n "$KEYWORDS" ] && NAME_PARTS+=("$KEYWORDS")
+            [ -n "$MARKER" ] && NAME_PARTS+=("$MARKER")
+            NAME_PARTS+=("$COUNTRY_FLAG")
+            NAME_PARTS+=("$COUNTRY_NAME")
+            NAME_PARTS+=("XpaVPN")
+            
+            NEW_NAME="${NAME_PARTS[*]}"
             
             if [[ "$line" == *"#"* ]]; then
               BASE_LINE=$(echo "$line" | sed -E 's/#.*$//')
-              NEW_NAME="$NUM | $COUNTRY_FLAG | XpaVPN"
-              [ -n "$KEYWORDS" ] && NEW_NAME="$NUM | $KEYWORDS | $COUNTRY_FLAG | XpaVPN"
-              echo "${BASE_LINE}#${NEW_NAME}" >> final_list.txt
+              FINAL_LINE="${BASE_LINE}#${NEW_NAME}"
             else
-              NEW_NAME="$NUM | $COUNTRY_FLAG | XpaVPN"
-              [ -n "$KEYWORDS" ] && NEW_NAME="$NUM | $KEYWORDS | $COUNTRY_FLAG | XpaVPN"
-              echo "${line}#${NEW_NAME}" >> final_list.txt
+              FINAL_LINE="${line}#${NEW_NAME}"
+            fi
+            
+            if [ "$COUNTRY_FLAG" = "🇷🇺" ]; then
+              echo "$FINAL_LINE" >> russia_list.txt
+            else
+              echo "$FINAL_LINE" >> other_list.txt
             fi
             
             COUNTER=$((COUNTER + 1))
-          done < unique.txt
+          done < filtered.txt
           
-          CONFIGS_COUNT=$((COUNTER - 1))
+          shuf other_list.txt > other_shuffled.txt 2>/dev/null || cat other_list.txt > other_shuffled.txt
+          
+          cat russia_list.txt > final_list.txt
+          cat other_shuffled.txt >> final_list.txt
+          
+          CONFIGS_COUNT=$(wc -l < final_list.txt | xargs)
+          
+          OLD_COUNT=0
+          if [ -f configs_count.txt ]; then
+            OLD_COUNT=$(cat configs_count.txt)
+          fi
+          
+          DIFF=$((CONFIGS_COUNT - OLD_COUNT))
+          if [ $DIFF -gt 0 ]; then
+            DIFF_TEXT="+${DIFF} 📈"
+          elif [ $DIFF -lt 0 ]; then
+            DIFF_TEXT="${DIFF} 📉"
+          else
+            DIFF_TEXT="0 ➡️"
+          fi
+          
+          echo "$CONFIGS_COUNT" > configs_count.txt
           
           CURRENT_DATETIME=$(date -u '+%Y-%m-%d %H:%M UTC')
           CURRENT_FULL=$(date -u '+%d.%m.%Y %H:%M:%S')
@@ -117,7 +273,7 @@ jobs:
           NEXT_ANNOUNCE=$(date -u -d '+1 hour' '+%H:%M UTC')
           
           printf '# profile-title: XpaVPN | ELITE\n' > index.html
-          printf '# announce: Обновление: %s | Следующее: %s | Поддержка: @XpaneR | Проект закрытого типа.\n' "$CURRENT_ANNOUNCE" "$NEXT_ANNOUNCE" >> index.html
+          printf '# announce: Update: %s | Next: %s | %s | Support: @XpaneR\n' "$CURRENT_ANNOUNCE" "$NEXT_ANNOUNCE" "$DIFF_TEXT" >> index.html
           printf '# profile-update-interval: 1\n' >> index.html
           printf '# profile-web-page-url: https://t.me/XpaVPN\n' >> index.html
           printf '# support-url: https://t.me/XpaneR\n' >> index.html
@@ -125,22 +281,27 @@ jobs:
           printf '# last-update: %s\n' "$CURRENT_FULL" >> index.html
           printf '# next-update: %s\n' "$NEXT_HOUR" >> index.html
           printf '# servers-count: %s\n' "$CONFIGS_COUNT" >> index.html
+          printf '# change: %s\n' "$DIFF_TEXT" >> index.html
           printf '\n' >> index.html
-          printf 'vless://00000000-0000-0000-0000-000000000000@127.0.0.1:443?encryption=none&security=reality&type=tcp#Наш ТГК @XpaVPN\n' >> index.html
-          printf 'vless://00000000-0000-0000-0000-000000000000@127.0.0.1:443?encryption=none&security=reality&type=tcp#Подписка навсегда\n' >> index.html
+          printf 'vless://00000000-0000-0000-0000-000000000000@127.0.0.1:443?encryption=none&security=reality&type=tcp#Our TG @XpaVPN\n' >> index.html
+          printf 'vless://00000000-0000-0000-0000-000000000000@127.0.0.1:443?encryption=none&security=reality&type=tcp#Forever subscription\n' >> index.html
           printf 'vless://00000000-0000-0000-0000-000000000000@127.0.0.1:443?encryption=none&security=reality&type=tcp#----------------\n' >> index.html
           
           cat final_list.txt >> index.html
           
-          echo "vpn.xpavpns.indevs.in" > CNAME
           base64 -w 0 index.html > subscription_b64.txt
+          
+          cat index.html | base64 -w 0 | rev > subscription_encrypted.txt
+          
+          echo "vpn.xpavpns.indevs.in" > CNAME
           
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           
-          git add index.html CNAME subscription_b64.txt
-          git commit -m "🔄 XpaVPN обновление $CURRENT_DATETIME | Конфигов: $CONFIGS_COUNT" || true
+          git add index.html CNAME subscription_b64.txt subscription_encrypted.txt configs_count.txt
+          git commit -m "🔄 XpaVPN update $CURRENT_DATETIME | Configs: $CONFIGS_COUNT ($DIFF_TEXT)" || true
           
           git push origin main
           
-          rm -f raw.txt temp_unique.txt unique.txt final_list.txt
+          rm -f raw.txt temp_unique.txt temp_clean.txt temp_dedup.txt filtered.txt final_list.txt
+          rm -f russia_list.txt other_list.txt other_shuffled.txt stability_scores.txt top_servers.txt
