@@ -28,14 +28,13 @@ jobs:
           
           > raw.txt
           for url in "${URLS[@]}"; do
-            curl -s "$url" >> raw.txt
+            curl -s --fail "$url" >> raw.txt || echo "# Failed: $url" >> raw.txt
             echo "" >> raw.txt
           done
           
           get_country() {
             local host="$1"
             host=$(echo "$host" | cut -d':' -f1)
-            
             case "$host" in
               *".ru"*|*"ru-"*|*-ru*|*"moscow"*|*"russia"*) echo "🇷🇺 Russia" ;;
               *".de"*|*"-de"*|*"frankfurt"*|*"germany"*) echo "🇩🇪 Germany" ;;
@@ -71,7 +70,18 @@ jobs:
             echo "$keywords" | xargs
           }
           
-          grep -E 'vless://|trojan://' raw.txt | sort -u > unique.txt
+          grep -E 'vless://|trojan://' raw.txt | sort -u > temp_unique.txt
+          
+          awk -F'[@:]' '
+            {
+              split($0, a, "@")
+              split(a[2], b, ":")
+              host = b[1]
+              split(b[2], c, "?")
+              port = c[1]
+              key = host ":" port
+              if (!seen[key]++) print
+            }' temp_unique.txt > unique.txt
           
           > final_list.txt
           COUNTER=1
@@ -98,31 +108,40 @@ jobs:
             COUNTER=$((COUNTER + 1))
           done < unique.txt
           
-          {
-            echo "# profile-title: XpaVPN | ELITE"
-            echo "# announce: Поддержка: @XpaneR | Проект закрытого типа."
-            echo "# profile-update-interval: 1"
-            echo "# profile-web-page-url: https://t.me/XpaVPN"
-            echo "# support-url: https://t.me/XpaneR"
-            echo "# subscription-userinfo: upload=0;download=51539607552;total=0;expire=252460800000"
-            
-            echo "vless://00000000-0000-0000-0000-000000000000@127.0.0.1:443?encryption=none&security=reality&type=tcp#Наш ТГК @XpaVPN"
-            echo "vless://00000000-0000-0000-0000-000000000000@127.0.0.1:443?encryption=none&security=reality&type=tcp#Подписка навсегда"
-            echo "vless://00000000-0000-0000-0000-000000000000@127.0.0.1:443?encryption=none&security=reality&type=tcp#Окончание 01.01.9999"
-            echo "vless://00000000-0000-0000-0000-000000000000@127.0.0.1:443?encryption=none&security=reality&type=tcp#----------------"
-            
-            cat final_list.txt
-          } > index.html
+          CONFIGS_COUNT=$((COUNTER - 1))
+          
+          CURRENT_DATETIME=$(date -u '+%Y-%m-%d %H:%M UTC')
+          CURRENT_FULL=$(date -u '+%d.%m.%Y %H:%M:%S')
+          NEXT_HOUR=$(date -u -d '+1 hour' '+%d.%m.%Y %H:00:00')
+          
+          cat > index.html << EOF
+# profile-title: XpaVPN | ELITE
+# announce: Поддержка: @XpaneR | Проект закрытого типа.
+# profile-update-interval: 1
+# profile-web-page-url: https://t.me/XpaVPN
+# support-url: https://t.me/XpaneR
+# subscription-userinfo: upload=0;download=51539607552;total=0;expire=252460800000
+# last-update: $CURRENT_FULL
+# next-update: $NEXT_HOUR
+# servers-count: $CONFIGS_COUNT
+
+vless://00000000-0000-0000-0000-000000000000@127.0.0.1:443?encryption=none&security=reality&type=tcp#Наш ТГК @XpaVPN
+vless://00000000-0000-0000-0000-000000000000@127.0.0.1:443?encryption=none&security=reality&type=tcp#Подписка навсегда
+vless://00000000-0000-0000-0000-000000000000@127.0.0.1:443?encryption=none&security=reality&type=tcp#Окончание 01.01.9999
+vless://00000000-0000-0000-0000-000000000000@127.0.0.1:443?encryption=none&security=reality&type=tcp#----------------
+EOF
+          
+          cat final_list.txt >> index.html
           
           echo "vpn.xpavpns.indevs.in" > CNAME
-          
           base64 -w 0 index.html > subscription_b64.txt
           
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           
           git add index.html CNAME subscription_b64.txt
-          git commit -m "🔄 XpaVPN обновление $(date -u '+%Y-%m-%d %H:%M UTC') | Конфигов: $((COUNTER-1))" || true
+          git commit -m "🔄 XpaVPN обновление $CURRENT_DATETIME | Конфигов: $CONFIGS_COUNT" || true
+          
           git push origin main
           
-          rm -f raw.txt unique.txt final_list.txt
+          rm -f raw.txt temp_unique.txt unique.txt final_list.txt
