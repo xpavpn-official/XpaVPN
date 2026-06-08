@@ -1,0 +1,14 @@
+{
+  "@ivan_petrov": {
+    "token": "a7f3e9d2c4b8",
+    "created": "2026-06-08",
+    "expires": "2026-07-08",
+    "type": "free"
+  },
+  "@maria_s": {
+    "token": "xyz789uvw012",
+    "created": "2026-06-07",
+    "expires": "2026-07-07",
+    "type": "premium"
+  }
+}
