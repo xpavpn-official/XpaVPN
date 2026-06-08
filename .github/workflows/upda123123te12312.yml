@@ -295,7 +295,7 @@ jobs:
           
           cat index.html | base64 -w 0 | rev > subscription_encrypted.txt
           
-          echo "vpn.xpavpns.indevs.in" > CNAME
+           echo "vpn.pane1.nx.kg" > CNAME
           
           # Generate individual subscriptions for users
           if [ -f users.json ]; then
