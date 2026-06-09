@@ -254,7 +254,7 @@ jobs:
           
           cat final_numbered.txt >> index.html
           
-          # GENERATE STATS.HTML (NO HEREDOC)
+          # GENERATE STATS.HTML
           printf '<!DOCTYPE html>\n' > stats.html
           printf '<html>\n' >> stats.html
           printf '<head><title>XpaVPN Stats</title>\n' >> stats.html
@@ -275,7 +275,7 @@ jobs:
           base64 -w 0 index.html > subscription_b64.txt
           echo "vpn.pane1.nx.kg" > CNAME
           
-          # INDIVIDUAL SUBSCRIPTIONS (NO HEREDOC)
+          # INDIVIDUAL SUBSCRIPTIONS
           if [ -f users.json ]; then
             mkdir -p users
             if ! command -v jq &> /dev/null; then
@@ -299,10 +299,24 @@ jobs:
             done
           fi
           
+          echo '{"servers": [' > index.json
+          first=true
+          while IFS= read -r line; do
+            name=$(echo "$line" | sed 's/.*#//' | sed 's/"/\\"/g')
+            url=$(echo "$line" | sed 's/#.*//')
+            if [ "$first" = true ]; then
+              first=false
+            else
+              echo ',' >> index.json
+            fi
+            printf '  {"name": "%s", "url": "%s"}' "$name" "$url" >> index.json
+          done < final_numbered.txt
+          echo ']}' >> index.json
+          
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           
-          git add index.html CNAME stats.html subscription_b64.txt configs_count.txt users/ users.json
+          git add index.html CNAME stats.html subscription_b64.txt configs_count.txt users/ users.json index.json
           git commit -m "🔄 XpaVPN update $CURRENT_DATETIME | Configs: $CONFIGS_COUNT ($DIFF_TEXT)" || true
           
           git push origin main
