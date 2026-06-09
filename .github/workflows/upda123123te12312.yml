@@ -299,20 +299,13 @@ jobs:
             done
           fi
           
-          # GENERATE JSON FILE FOR HAPP
-          echo '{"servers": [' > index.json
-          first=true
-          while IFS= read -r line; do
-            name=$(echo "$line" | sed 's/.*#//' | sed 's/"/\\"/g')
-            url=$(echo "$line" | sed 's/#.*//')
-            if [ "$first" = true ]; then
-              first=false
-            else
-              echo ',' >> index.json
-            fi
-            printf '  {"name": "%s", "url": "%s"}' "$name" "$url" >> index.json
-          done < final_numbered.txt
-          echo ']}' >> index.json
+          # GENERATE JSON FILE FOR HAPP (plain vless lines, same as index.html content)
+          printf 'vless://00000000-0000-0000-0000-000000000001@127.0.0.1:443?encryption=none&security=reality&type=tcp#Наш ТГК @XpaVPN\n' > index.json
+          printf 'vless://00000000-0000-0000-0000-000000000002@127.0.0.1:443?encryption=none&security=reality&type=tcp#Подписка навсегда\n' >> index.json
+          printf 'vless://00000000-0000-0000-0000-000000000003@127.0.0.1:443?encryption=none&security=reality&type=tcp#🍻 Кинуть монетку - @XpaneR 🪙\n' >> index.json
+          printf 'vless://00000000-0000-0000-0000-000000000005@127.0.0.1:443?encryption=none&security=reality&type=tcp#🎁 VIP спонсорам\n' >> index.json
+          printf 'vless://00000000-0000-0000-0000-000000000000@127.0.0.1:443?encryption=none&security=reality&type=tcp#----------------\n' >> index.json
+          cat final_numbered.txt >> index.json
           
           # REDIRECT ROOT TO JSON FOR HAPP (so that https://vpn.pane1.nx.kg shows JSON)
           echo "/ /index.json 302" > _redirects
