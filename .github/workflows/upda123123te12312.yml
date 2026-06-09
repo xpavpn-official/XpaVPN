@@ -299,6 +299,7 @@ jobs:
             done
           fi
           
+          # GENERATE JSON FILE FOR HAPP
           echo '{"servers": [' > index.json
           first=true
           while IFS= read -r line; do
@@ -313,10 +314,15 @@ jobs:
           done < final_numbered.txt
           echo ']}' >> index.json
           
+          # REDIRECT ROOT TO JSON FOR HAPP (so that https://vpn.pane1.nx.kg shows JSON)
+          echo "/ /index.json 302" > _redirects
+          # Ensure no Jekyll processing (allows _redirects to work)
+          touch .nojekyll
+          
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           
-          git add index.html CNAME stats.html subscription_b64.txt configs_count.txt users/ users.json index.json
+          git add index.html CNAME stats.html subscription_b64.txt configs_count.txt users/ users.json index.json _redirects .nojekyll
           git commit -m "🔄 XpaVPN update $CURRENT_DATETIME | Configs: $CONFIGS_COUNT ($DIFF_TEXT)" || true
           
           git push origin main
