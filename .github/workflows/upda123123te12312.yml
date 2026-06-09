@@ -249,7 +249,6 @@ jobs:
           printf 'vless://00000000-0000-0000-0000-000000000001@127.0.0.1:443?encryption=none&security=reality&type=tcp#Наш ТГК @XpaVPN\n' >> index.html
           printf 'vless://00000000-0000-0000-0000-000000000002@127.0.0.1:443?encryption=none&security=reality&type=tcp#Подписка навсегда\n' >> index.html
           printf 'vless://00000000-0000-0000-0000-000000000003@127.0.0.1:443?encryption=none&security=reality&type=tcp#🍻 Кинуть монетку - @XpaneR 🪙\n' >> index.html
-          printf 'vless://00000000-0000-0000-0000-000000000004@127.0.0.1:443?encryption=none&security=reality&type=tcp#💎 Donate: XMR 45fft4...k9jU\n' >> index.html
           printf 'vless://00000000-0000-0000-0000-000000000005@127.0.0.1:443?encryption=none&security=reality&type=tcp#🎁 VIP спонсорам\n' >> index.html
           printf 'vless://00000000-0000-0000-0000-000000000000@127.0.0.1:443?encryption=none&security=reality&type=tcp#----------------\n' >> index.html
           
