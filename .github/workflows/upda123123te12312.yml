@@ -11,7 +11,7 @@ permissions:
 env:
   PROFILE_NAME: "XpaVPN | ELITE"
   TOTAL_GB: "∞"
-  USED_GB: "48GB"
+  USED_GB: "5186448GB"
   EXPIRE_DATE: "02.03.9970"
   CUSTOM_FOOTER_FORMAT: "Update: {current_time} UTC | Next: {next_time} | Change: -1 | @XpaneR"
 
