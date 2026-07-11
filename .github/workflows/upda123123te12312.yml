@@ -1,324 +1,189 @@
-name: Update VPN Configs
+name: XpaVPN Auto Update with Checker & Panel
 
 on:
   schedule:
     - cron: '0 * * * *'
   workflow_dispatch:
-    inputs:
-      country_filter:
-        description: 'Filter by country (ru/de/us/all)'
-        required: false
-        default: 'all'
-      top_servers:
-        description: 'Top servers by stability (0=off, 20=top20)'
-        required: false
-        default: '0'
-      check_alive:
-        description: 'Check alive ports (true/false)'
-        required: false
-        default: 'false'
-      search_github:
-        description: 'Search GitHub for active sources (true/false)'
-        required: false
-        default: 'false'
 
 permissions:
   contents: write
 
+env:
+  PROFILE_NAME: "XpaVPN | ELITE"
+  TOTAL_GB: "∞"
+  USED_GB: "48GB"
+  EXPIRE_DATE: "02.03.9970"
+  CUSTOM_FOOTER_FORMAT: "Update: {current_time} UTC | Next: {next_time} | Change: -1 | @XpaneR"
+
 jobs:
-  build:
+  update-links:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-      - name: Build and Push
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Install dependencies
+        run: pip install aiohttp
+
+      - name: Run checker and generate panel
         run: |
-          # BLACKLIST DOMAINS
-          BLACKLIST_DOMAINS=(
-            "127.0.0.1"
-            "localhost"
-            "0.0.0.0"
-            "example.com"
-            "test.com"
-            "w0rld.gq"
-            "w0rld.top"
-            "freevpn.gq"
-          )
-          
-          is_domain_blacklisted() {
-            local host="$1"
-            for black in "${BLACKLIST_DOMAINS[@]}"; do
-              if [[ "$host" == *"$black"* ]]; then
-                return 0
-              fi
-            done
-            return 1
-          }
-          
-          # CHECK PORT ALIVE
-          check_port() {
-            local host="$1"
-            local port="$2"
-            timeout 2 bash -c "echo >/dev/tcp/$host/$port" 2>/dev/null && return 0 || return 1
-          }
-          
-          # GET COUNTRY
-          get_country() {
-            local host="$1"
-            host=$(echo "$host" | cut -d':' -f1)
-            case "$host" in
-              *".ru"*|*"ru-"*|*-ru*|*"moscow"*|*"russia"*) echo "🇷🇺 Russia" ;;
-              *".de"*|*"-de"*|*"frankfurt"*|*"germany"*) echo "🇩🇪 Germany" ;;
-              *".fr"*|*"-fr"*|*"paris"*|*"france"*) echo "🇫🇷 France" ;;
-              *".nl"*|*"-nl"*|*"amsterdam"*|*"netherlands"*) echo "🇳🇱 Netherlands" ;;
-              *".uk"*|*".gb"*|*"-uk"*|*"london"*|*"united kingdom"*) echo "🇬🇧 UK" ;;
-              *".us"*|*"-us"*|*"newyork"*|*"unitedstates"*) echo "🇺🇸 USA" ;;
-              *".jp"*|*"-jp"*|*"tokyo"*|*"japan"*) echo "🇯🇵 Japan" ;;
-              *".sg"*|*"-sg"*|*"singapore"*) echo "🇸🇬 Singapore" ;;
-              *".ca"*|*"-ca"*|*"canada"*) echo "🇨🇦 Canada" ;;
-              *".au"*|*"-au"*|*"australia"*) echo "🇦🇺 Australia" ;;
-              *) echo "🌍 Other" ;;
-            esac
-          }
-          
-          is_blacklisted() {
-            local config="$1"
-            if echo "$config" | grep -qi "dead\|expired\|test\|broken\|invalid\|fake\|demo\|sample"; then
-              return 0
-            fi
-            return 1
-          }
-          
-          clean_config() {
-            local config="$1"
-            config=$(echo "$config" | sed 's/[[:space:]]*$//')
-            config=$(echo "$config" | sed 's/^[[:space:]]*//')
-            echo "$config"
-          }
-          
-          # SOURCES
-          URLS=(
-            "https://raw.githubusercontent.com/igareck/vpn-configs-for-russia/main/Vless-Reality-White-Lists-Rus-Mobile.txt"
-            "https://raw.githubusercontent.com/igareck/vpn-configs-for-russia/main/WHITE-CIDR-RU-all.txt"
-            "https://raw.githubusercontent.com/igareck/vpn-configs-for-russia/main/BLACK_VLESS_RUS.txt"
-            "https://raw.githubusercontent.com/Maskkost93/kizyak-vpn-4.0/refs/heads/main/kizyakbeta7.txt"
-            "https://raw.githubusercontent.com/Maskkost93/kizyak-vpn-4.0/refs/heads/main/kizyaktestru.txt"
-          )
-          
-          # SEARCH GITHUB FOR ACTIVE SOURCES
-          if [ "${{ inputs.search_github }}" = "true" ]; then
-            echo "# Searching GitHub for sources..."
-            > github_sources.txt
-            for QUERY in "vless:// extension:txt" "trojan:// extension:txt"; do
-              curl -s "https://api.github.com/search/code?q=$(echo $QUERY | sed 's/ /%20/g')&per_page=10" \
-                -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
-                2>/dev/null | grep -o '"html_url":"[^"]*"' | cut -d'"' -f4 | while read -r FILE_URL; do
-                  RAW_URL=$(echo "$FILE_URL" | sed 's/github.com/raw.githubusercontent.com/' | sed 's/\/blob\//\//')
-                  echo "$RAW_URL" >> github_sources.txt
-                done
-              sleep 1
-            done
-            if [ -f github_sources.txt ]; then
-              sort -u github_sources.txt | head -5 | while read -r NEW_URL; do
-                URLS+=("$NEW_URL")
-                echo "# New source: $NEW_URL"
-              done
-            fi
-          fi
-          
-          # DOWNLOAD ALL SOURCES
-          > raw.txt
-          for url in "${URLS[@]}"; do
-            curl -s --fail "$url" >> raw.txt || echo "# Failed: $url" >> raw.txt
-            echo "" >> raw.txt
-          done
-          
-          grep -E 'vless://|trojan://' raw.txt | sort -u > temp_unique.txt
-          
-          while IFS= read -r line; do
-            clean_config "$line" >> temp_clean.txt
-          done < temp_unique.txt
-          
-          # REMOVE DUPLICATES BY host:port AND UUID
-          > uuids.txt
-          while IFS= read -r line; do
-            UUID=$(echo "$line" | grep -oE 'vless://([a-f0-9\-]+)' | head -1)
-            [ -n "$UUID" ] && echo "$UUID" >> uuids.txt
-          done < temp_clean.txt
-          
-          awk -F'[@:]' '!seen[$1":"$2]++' temp_clean.txt > temp_dedup.txt
-          
-          # MAIN FILTERING LOOP
-          COUNTRY_FILTER="${country_filter:-all}"
-          CHECK_ALIVE="${check_alive:-false}"
-          TOP_SERVERS="${top_servers:-0}"
-          
-          > filtered.txt
-          
-          while IFS= read -r line; do
-            [ -z "$line" ] && continue
-            
-            if is_blacklisted "$line"; then
-              continue
-            fi
-            
-            HOST=$(echo "$line" | sed -E 's/.*@([^:?]+).*/\1/')
-            
-            if is_domain_blacklisted "$HOST"; then
-              continue
-            fi
-            
-            COUNTRY_CODE=$(get_country "$HOST")
-            
-            if [ "$COUNTRY_FILTER" != "all" ] && [ "$COUNTRY_CODE" != "$COUNTRY_FILTER" ]; then
-              continue
-            fi
-            
-            if [ "$CHECK_ALIVE" = "true" ]; then
-              PORT=$(echo "$line" | grep -oP ':\K\d+(?=\?)' || echo "443")
-              if ! check_port "$HOST" "$PORT"; then
-                continue
-              fi
-            fi
-            
-            echo "$line" >> filtered.txt
-          done < temp_dedup.txt
-          
-          # SORT: Russia first, then shuffle others
-          > russia_list.txt
-          > other_list.txt
-          
-          while IFS= read -r line; do
-            HOST=$(echo "$line" | sed -E 's/.*@([^:?]+).*/\1/')
-            COUNTRY_FLAG=$(get_country "$HOST")
-            
-            if [ "$COUNTRY_FLAG" = "🇷🇺 Russia" ]; then
-              echo "$line" >> russia_list.txt
-            else
-              echo "$line" >> other_list.txt
-            fi
-          done < filtered.txt
-          
-          shuf other_list.txt > other_shuffled.txt 2>/dev/null || cat other_list.txt > other_shuffled.txt
-          
-          > final_list.txt
-          cat russia_list.txt >> final_list.txt
-          cat other_shuffled.txt >> final_list.txt
-          
-          # Add numbering
-          > final_numbered.txt
-          COUNTER=1
-          while IFS= read -r line; do
-            NUM=$(printf "%04d" $COUNTER)
-            HOST=$(echo "$line" | sed -E 's/.*@([^:?]+).*/\1/')
-            COUNTRY_FLAG=$(get_country "$HOST")
-            echo "${line}#${NUM} | ${COUNTRY_FLAG} | XpaVPN" >> final_numbered.txt
-            COUNTER=$((COUNTER + 1))
-          done < final_list.txt
-          
-          CONFIGS_COUNT=$((COUNTER - 1))
-          
-          # COMPARE WITH PREVIOUS
-          OLD_COUNT=0
-          [ -f configs_count.txt ] && OLD_COUNT=$(cat configs_count.txt)
-          DIFF=$((CONFIGS_COUNT - OLD_COUNT))
-          [ $DIFF -gt 0 ] && DIFF_TEXT="+${DIFF}" || DIFF_TEXT="${DIFF}"
-          echo "$CONFIGS_COUNT" > configs_count.txt
-          
-          # TIMESTAMPS
-          CURRENT_DATETIME=$(date -u '+%Y-%m-%d %H:%M UTC')
-          CURRENT_FULL=$(date -u '+%d.%m.%Y %H:%M:%S')
-          NEXT_HOUR=$(date -u -d '+1 hour' '+%d.%m.%Y %H:00:00')
-          
-          # GENERATE INDEX.HTML
-          printf '# profile-title: XpaVPN | ELITE\n' > index.html
-          printf '# announce: Update: %s | Next: %s | Change: %s | @XpaneR\n' "$CURRENT_DATETIME" "$NEXT_HOUR" "$DIFF_TEXT" >> index.html
-          printf '# profile-update-interval: 1\n' >> index.html
-          printf '# profile-web-page-url: https://t.me/XpaVPN\n' >> index.html
-          printf '# support-url: https://t.me/XpaneR\n' >> index.html
-          printf '# subscription-userinfo: upload=0;download=51539607552;total=0;expire=252460800000\n' >> index.html
-          printf '# last-update: %s\n' "$CURRENT_FULL" >> index.html
-          printf '# next-update: %s\n' "$NEXT_HOUR" >> index.html
-          printf '# servers-count: %s\n' "$CONFIGS_COUNT" >> index.html
-          printf '# change: %s\n' "$DIFF_TEXT" >> index.html
-          printf '\n' >> index.html
-          
-          # Fake servers with donation memes
-          printf 'vless://00000000-0000-0000-0000-000000000001@127.0.0.1:443?encryption=none&security=reality&type=tcp#Наш ТГК @XpaVPN\n' >> index.html
-          printf 'vless://00000000-0000-0000-0000-000000000002@127.0.0.1:443?encryption=none&security=reality&type=tcp#Подписка навсегда\n' >> index.html
-          printf 'vless://00000000-0000-0000-0000-000000000003@127.0.0.1:443?encryption=none&security=reality&type=tcp#🍻 Кинуть монетку - @XpaneR 🪙\n' >> index.html
-          printf 'vless://00000000-0000-0000-0000-000000000005@127.0.0.1:443?encryption=none&security=reality&type=tcp#🎁 VIP спонсорам\n' >> index.html
-          printf 'vless://00000000-0000-0000-0000-000000000000@127.0.0.1:443?encryption=none&security=reality&type=tcp#----------------\n' >> index.html
-          
-          cat final_numbered.txt >> index.html
-          
-          # GENERATE STATS.HTML
-          printf '<!DOCTYPE html>\n' > stats.html
-          printf '<html>\n' >> stats.html
-          printf '<head><title>XpaVPN Stats</title>\n' >> stats.html
-          printf '<style>body{background:#0a0e27;color:#0ff;font-family:monospace;padding:20px}</style>\n' >> stats.html
-          printf '</head>\n' >> stats.html
-          printf '<body>\n' >> stats.html
-          printf '<h1>XpaVPN Statistics</h1>\n' >> stats.html
-          printf '<p>Total configs: <strong>%s</strong></p>\n' "$CONFIGS_COUNT" >> stats.html
-          printf '<p>Last update: %s</p>\n' "$CURRENT_DATETIME" >> stats.html
-          printf '<p>Change: %s</p>\n' "$DIFF_TEXT" >> stats.html
-          printf '<p>Filter: %s</p>\n' "$COUNTRY_FILTER" >> stats.html
-          printf '<p>Alive check: %s</p>\n' "$CHECK_ALIVE" >> stats.html
-          printf '<hr>\n' >> stats.html
-          printf '<p>Sources: %s</p>\n' "${#URLS[@]}" >> stats.html
-          printf '</body>\n' >> stats.html
-          printf '</html>\n' >> stats.html
-          
-          base64 -w 0 index.html > subscription_b64.txt
-          echo "vpn.pane1.nx.kg" > CNAME
-          
-          # INDIVIDUAL SUBSCRIPTIONS
-          if [ -f users.json ]; then
-            mkdir -p users
-            if ! command -v jq &> /dev/null; then
-              sudo apt-get update && sudo apt-get install -y jq
-            fi
-            cat users.json | jq -r 'to_entries[] | "\(.key)|\(.value.token)"' 2>/dev/null | while IFS='|' read -r username token; do
-              if [ -n "$username" ] && [ -n "$token" ]; then
-                head -n 50 final_numbered.txt > "users/${token}.txt"
-                
-                printf '# profile-title: XpaVPN | %s\n' "$username" > "users/${token}.html"
-                printf '# announce: Personal subscription | Support: @XpaneR\n' >> "users/${token}.html"
-                printf '# profile-update-interval: 1\n' >> "users/${token}.html"
-                printf '# profile-web-page-url: https://t.me/XpaVPN\n' >> "users/${token}.html"
-                printf '# last-update: %s\n' "$CURRENT_FULL" >> "users/${token}.html"
-                printf '# servers-count: 50\n' >> "users/${token}.html"
-                printf '\n' >> "users/${token}.html"
-                cat "users/${token}.txt" >> "users/${token}.html"
-                
-                rm -f "users/${token}.txt"
-              fi
-            done
-          fi
-          
-          # GENERATE JSON FILE FOR HAPP (plain vless lines, same as index.html content)
-          printf 'vless://00000000-0000-0000-0000-000000000001@127.0.0.1:443?encryption=none&security=reality&type=tcp#Наш ТГК @XpaVPN\n' > index.json
-          printf 'vless://00000000-0000-0000-0000-000000000002@127.0.0.1:443?encryption=none&security=reality&type=tcp#Подписка навсегда\n' >> index.json
-          printf 'vless://00000000-0000-0000-0000-000000000003@127.0.0.1:443?encryption=none&security=reality&type=tcp#🍻 Кинуть монетку - @XpaneR 🪙\n' >> index.json
-          printf 'vless://00000000-0000-0000-0000-000000000005@127.0.0.1:443?encryption=none&security=reality&type=tcp#🎁 VIP спонсорам\n' >> index.json
-          printf 'vless://00000000-0000-0000-0000-000000000000@127.0.0.1:443?encryption=none&security=reality&type=tcp#----------------\n' >> index.json
-          cat final_numbered.txt >> index.json
-          
-          # REDIRECT ROOT TO JSON FOR HAPP (so that https://vpn.pane1.nx.kg shows JSON)
-          echo "/ /index.json 302" > _redirects
-          # Ensure no Jekyll processing (allows _redirects to work)
-          touch .nojekyll
-          
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          
-          git add index.html CNAME stats.html subscription_b64.txt configs_count.txt users/ users.json index.json _redirects .nojekyll
-          git commit -m "🔄 XpaVPN update $CURRENT_DATETIME | Configs: $CONFIGS_COUNT ($DIFF_TEXT)" || true
-          
-          git push origin main
-          
-          rm -f raw.txt temp_unique.txt temp_clean.txt temp_dedup.txt filtered.txt final_list.txt final_numbered.txt
-          rm -f russia_list.txt other_list.txt other_shuffled.txt uuids.txt github_sources.txt
+          cat << 'EOF' > inline_process.py
+          import asyncio
+          import aiohttp
+          import os
+          import re
+          import base64
+          from datetime import datetime, timedelta
+
+          URLS = [
+              "https://raw.githubusercontent.com/Bofasik/Vless-Reality/main/Vless-Reality.txt"
+          ]
+
+          MAX_CONCURRENT_CHECKS = 15
+          TIMEOUT_SECONDS = 4
+
+          def clean_remark(remark):
+              remark = re.sub(r"\s*\|\s*(?:\[BL\])?#\d+\s*\|\s*(?:RU Russia|Other)\s*\|\s*XpaVPN", "", remark)
+              remark = re.sub(r"\s*\|\s*XpaVPN", "", remark)
+              return remark.strip()
+
+          async def check_single_proxy(sem, session, proxy_url):
+              async with sem:
+                  try:
+                      match = re.search(r"@(.*?):(\d+)", proxy_url)
+                      if not match:
+                          return None
+                      host, port = match.group(1), match.group(2)
+                      conn = asyncio.open_connection(host, int(port))
+                      reader, writer = await asyncio.wait_for(conn, timeout=TIMEOUT_SECONDS)
+                      writer.close()
+                      await writer.wait_closed()
+                      return proxy_url
+                  except:
+                      return None
+
+          async def main():
+              raw_proxies = []
+              async with aiohttp.ClientSession() as session:
+                  for url in URLS:
+                      try:
+                          async with session.get(url, timeout=10) as resp:
+                              if resp.status == 200:
+                                  text = await resp.text()
+                                  raw_proxies.extend(text.splitlines())
+                      except:
+                          pass
+
+              if not raw_proxies:
+                  return
+
+              sem = asyncio.Semaphore(MAX_CONCURRENT_CHECKS)
+              async with aiohttp.ClientSession() as session:
+                  tasks = [check_single_proxy(sem, session, proxy.strip()) for proxy in raw_proxies if proxy.strip()]
+                  checked_results = await asyncio.gather(*tasks)
+
+              final_proxies = []
+              ads_keywords = ["Наш ТГК", "Подписка", "Кинуть монетку", "VIP спонсорам", "-------"]
+
+              for p in checked_results:
+                  if not p:
+                      continue
+                  if "#" in p:
+                      base_part, remark = p.rsplit("#", 1)
+                      cleaned_name = clean_remark(remark)
+                      if any(keyword in cleaned_name for keyword in ads_keywords):
+                          continue
+                      final_proxies.append(f"{base_part}#{cleaned_name}")
+                  else:
+                      final_proxies.append(p)
+
+              final_proxies = list(set(final_proxies))
+              sub_content = "\n".join(final_proxies)
+              base64_sub = base64.b64encode(sub_content.encode('utf-8')).decode('utf-8')
+
+              profile_name = os.getenv("PROFILE_NAME", "XpaVPN | ELITE")
+              total_gb = os.getenv("TOTAL_GB", "∞")
+              used_gb = os.getenv("USED_GB", "48GB")
+              expire_date = os.getenv("EXPIRE_DATE", "02.03.9970")
+              footer_format = os.getenv("CUSTOM_FOOTER_FORMAT", "")
+
+              now_utc = datetime.utcnow()
+              next_utc = now_utc + timedelta(hours=1)
+              footer_text = footer_format.format(
+                  current_time=now_utc.strftime("%Y-%m-%d %H:%M"),
+                  next_time=next_utc.strftime("%d.%m.%Y %H:%M:%S")
+              )
+
+              html_template = f"""<!DOCTYPE html>
+          <html lang="ru">
+          <head>
+              <meta charset="UTF-8">
+              <meta name="viewport" content="width=device-width, initial-scale=1.0">
+              <title>{profile_name}</title>
+              <style>
+                  body {{ background-color: #121214; color: #e1e1e6; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; padding: 20px; margin: 0; }}
+                  .panel {{ border: 1px solid #29292e; background: #18181c; border-radius: 8px; padding: 15px; max-width: 600px; margin: 20px auto; box-shadow: 0 4px 12px rgba(0,0,0,0.5); }}
+                  .header {{ display: flex; justify-content: space-between; align-items: center; font-weight: bold; font-size: 16px; margin-bottom: 12px; }}
+                  .auto-update {{ font-size: 11px; color: #7c7c8a; font-weight: normal; }}
+                  .progress-container {{ background: #29292e; border-radius: 6px; height: 16px; width: 100%; overflow: hidden; position: relative; margin-bottom: 6px; border: 1px solid #3e3e4a; }}
+                  .progress-fill {{ background: linear-gradient(90deg, #4e4ecf, #6363f2); width: 45%; height: 100%; }}
+                  .progress-text {{ position: absolute; width: 100%; text-align: center; font-size: 11px; top: 1px; font-weight: bold; color: #ffffff; z-index: 10; text-shadow: 1px 1px 2px rgba(0,0,0,0.8); }}
+                  .info-row {{ display: flex; justify-content: space-between; font-size: 12px; color: #a8a8b3; margin-top: 6px; }}
+                  .footer-text {{ font-size: 11px; color: #7c7c8a; text-align: left; margin-top: 12px; border-top: 1px solid #29292e; padding-top: 8px; font-family: monospace; }}
+                  .list-title {{ max-width: 600px; margin: 20px auto 10px auto; font-size: 14px; color: #7c7c8a; text-transform: uppercase; letter-spacing: 1px; }}
+                  .proxy-list {{ border: 1px solid #29292e; background: #18181c; border-radius: 8px; max-width: 600px; margin: 0 auto; overflow: hidden; }}
+                  .proxy-item {{ padding: 12px 15px; border-bottom: 1px solid #222226; display: flex; justify-content: space-between; align-items: center; font-size: 14px; }}
+                  .proxy-item:last-child {{ border-bottom: none; }}
+                  .proxy-name {{ color: #e1e1e6; font-weight: 500; }}
+                  .proxy-type {{ font-size: 11px; color: #7c7c8a; margin-top: 2px; }}
+                  a.sub-btn {{ display: block; text-align: center; background: #4e4ecf; color: #fff; text-decoration: none; padding: 10px; border-radius: 6px; font-weight: bold; margin-bottom: 15px; font-size: 14px; }}
+                  a.sub-btn:hover {{ background: #3b3bc0; }}
+              </style>
+          </head>
+          <body>
+              <div class="panel">
+                  <div class="header">
+                      <span>{profile_name}</span>
+                      <span class="auto-update">Автообновление - 1ч.</span>
+                  </div>
+                  <div class="progress-container">
+                      <div class="progress-fill"></div>
+                      <div class="progress-text">{used_gb} / {total_gb}</div>
+                  </div>
+                  <div class="info-row">
+                      <span>Истекает: {expire_date}</span>
+                  </div>
+                  <div class="footer-text">
+                      {footer_text}
+                  </div>
+              </div>
+              <div style="max-width: 600px; margin: 0 auto;">
+                  <a class="sub-btn" href="data:text/plain;base64,{base64_sub}" download="sub.txt">Скачать подписку (Base64)</a>
+              </div>
+              <div class="list-title">Доступные сервера ({len(final_proxies)}):</div>
+              <div class="proxy-list">
+                  {"".join([f'<div class="proxy-item"><div><div class="proxy-name">⚡ {p.split("#")[1] if "#" in p else "Сервер"}</div><div class="proxy-type">VLESS / TCP / REALITY</div></div></div>' for p in final_proxies])}
+              </div>
+          </body>
+          </html>"""
+
+              with open("index.html", "w", encoding="utf-8") as f:
+                  f.write(html_template)
+
+          if __name__ == "__main__":
+              asyncio.run(main())
+          EOF
+          python inline_process.py
+
+      - name: Commit and push changes
+        run: |
+          git config --local user.email "actions@github.com"
+          git config --local user.name "GitHub Actions"
+          git add index.html
+          git commit -m "Update" || exit 0
+          git push
