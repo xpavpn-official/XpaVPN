@@ -8,7 +8,7 @@
 
 #profile-title: Telegram: @Pulsevpm
 #profile-update-interval: 24
-#subscription-userinfo: upload=0; download=1870975815477; total=0; expire=0
+#subscription-userinfo: upload=0; download=91870975815477; total=0; expire=0
 #support-url: 
 #profile-web-page-url:
 
